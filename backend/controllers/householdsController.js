@@ -12,6 +12,15 @@ import {
 } from '../services/dbHelper.js';
 import { sendEmailVerificationToken } from '../utils/email.js';
 
+const ensureSectorArray = (raw) => {
+  if (Array.isArray(raw)) return raw;
+  const parsed = parseJSONField(raw, raw);
+  if (Array.isArray(parsed)) return parsed;
+  if (typeof parsed === 'string' && parsed.trim()) return [parsed.trim()];
+  if (typeof raw === 'string' && raw.trim()) return [raw.trim()];
+  return [];
+};
+
 const formatHousehold = (hh) => {
   if (!hh) return null;
   return {
@@ -19,17 +28,29 @@ const formatHousehold = (hh) => {
     emergency_receiver: parseJSONField(hh.emergency_receiver, null),
     members: (hh.members || []).map((m) => ({
       ...m,
-      sectors: parseJSONField(m.sectors, []),
+      sectors: ensureSectorArray(m.sectors),
     })),
   };
 };
 
 const formatPendingRegistration = (r) => {
   if (!r) return null;
+  const head = parseJSONField(r.head_data, {});
+  const rawMembers = parseJSONField(r.members_data, []);
+  const members = Array.isArray(rawMembers)
+    ? rawMembers.map((m) => ({
+        ...m,
+        sectors: ensureSectorArray(m.sectors),
+      }))
+    : [];
+
   return {
     ...r,
-    head: parseJSONField(r.head_data, {}),
-    members: parseJSONField(r.members_data, []),
+    head: {
+      ...head,
+      sectors: ensureSectorArray(head?.sectors),
+    },
+    members,
     emergency_receiver: parseJSONField(r.emergency_receiver, null),
   };
 };

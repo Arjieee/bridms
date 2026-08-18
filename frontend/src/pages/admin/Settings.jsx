@@ -27,6 +27,18 @@ const CYCLE_TYPES = [
   { key: 'emergency',   label: 'Emergency / Disaster', color: '#6b7280' },
 ]
 
+const normalizeSectors = (sectors) => {
+  if (Array.isArray(sectors)) return sectors
+  if (typeof sectors === 'string' && sectors.trim()) {
+    try {
+      const parsed = JSON.parse(sectors)
+      if (Array.isArray(parsed)) return parsed
+    } catch (_) {}
+    return [sectors.trim()]
+  }
+  return []
+}
+
 export default function AdminSettings() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -411,9 +423,9 @@ export default function AdminSettings() {
                         <span>·</span>
                         <span className="font-semibold text-navy">{(reg.members?.length || 0) + 1} member(s)</span>
                       </div>
-                      {reg.head?.sectors?.length > 0 && (
+                      {normalizeSectors(reg.head?.sectors).length > 0 && (
                         <div className="flex gap-1.5 mt-2 flex-wrap">
-                          {reg.head.sectors.map(s =>
+                          {normalizeSectors(reg.head?.sectors).map(s =>
                             <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>
                           )}
                         </div>
@@ -1007,11 +1019,11 @@ export default function AdminSettings() {
                       <div className="text-xs font-semibold text-navy">{v || '—'}</div>
                     </div>
                   ))}
-                  {regDetail.head?.sectors?.length > 0 && (
+                  {normalizeSectors(regDetail.head?.sectors).length > 0 && (
                     <div className="col-span-2 bg-blue-50 p-2.5 rounded-xl">
                       <div className="text-[10px] font-bold text-blue-400 uppercase mb-1">Sectors</div>
                       <div className="flex flex-wrap gap-1">
-                        {regDetail.head.sectors.map(s =>
+                        {normalizeSectors(regDetail.head?.sectors).map(s =>
                           <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>
                         )}
                       </div>
@@ -1033,9 +1045,9 @@ export default function AdminSettings() {
                           {m.email && <><i className="fas fa-envelope mr-1" />{m.email}</>}
                         </div>
                       )}
-                      {m.sectors?.length > 0 && (
+                      {normalizeSectors(m.sectors).length > 0 && (
                         <div className="flex gap-1 mt-1 flex-wrap">
-                          {m.sectors.map(s =>
+                          {normalizeSectors(m.sectors).map(s =>
                             <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>
                           )}
                         </div>

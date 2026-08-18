@@ -407,48 +407,48 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="mobile-card-table">
-          <table className="tbl w-full table-fixed">
-            <thead>
-              <tr>
-                <th className="w-[28%]">{distFilter === 'purok' ? 'Purok' : 'Sector'}</th>
-                <th className="w-[15%]">Total</th>
-                <th className="w-[15%]">Claimed</th>
-                <th className="w-[15%]">Remaining</th>
-                <th className="w-[27%]">Progress</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overviewData.filter(d => d.total > 0).length === 0 ? (
-                <tr><td colSpan={5}>
-                  <div className="py-8 text-center text-slate-400 text-sm">
-                    <i className="fas fa-chart-bar text-2xl mb-2 block text-slate-300" />
-                    No active cycle data
-                  </div>
-                </td></tr>
-              ) : overviewData.filter(d => d.total > 0).map((d, i) => {
-                const pct = d.total > 0 ? Math.round((d.claimed / d.total) * 100) : 0
-                return (
-                  <tr key={i}>
-                    <td data-label="Name"><strong className="text-navy">{d.name}</strong></td>
-                    <td data-label="Total">{d.total}</td>
-                    <td data-label="Claimed"><span className="text-emerald-600 font-bold">{d.claimed}</span></td>
-                    <td data-label="Remaining"><span className="text-red-500 font-bold">{d.total - d.claimed}</span></td>
-                    <td data-label="Progress">
-                      <div className="flex items-center gap-2 w-full">
-                        <div className="flex-1 bg-slate-100 rounded-full h-2 min-w-[80px]">
-                          <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%` }} />
+        {overviewData.filter(d => d.total > 0).length === 0 ? (
+          <div className="py-8 text-center text-slate-400 text-sm">
+            <i className="fas fa-chart-bar text-2xl mb-2 block text-slate-300" />
+            No active cycle data
+          </div>
+        ) : (
+          <div className="mobile-card-table">
+            <table className="tbl w-full table-fixed">
+              <thead>
+                <tr>
+                  <th className="w-[28%]">{distFilter === 'purok' ? 'Purok' : 'Sector'}</th>
+                  <th className="w-[15%]">Total</th>
+                  <th className="w-[15%]">Claimed</th>
+                  <th className="w-[15%]">Remaining</th>
+                  <th className="w-[27%]">Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {overviewData.filter(d => d.total > 0).map((d, i) => {
+                  const pct = d.total > 0 ? Math.round((d.claimed / d.total) * 100) : 0
+                  return (
+                    <tr key={i}>
+                      <td data-label="Name"><strong className="text-navy">{d.name}</strong></td>
+                      <td data-label="Total">{d.total}</td>
+                      <td data-label="Claimed"><span className="text-emerald-600 font-bold">{d.claimed}</span></td>
+                      <td data-label="Remaining"><span className="text-red-500 font-bold">{d.total - d.claimed}</span></td>
+                      <td data-label="Progress">
+                        <div className="flex items-center gap-2 w-full">
+                          <div className="flex-1 bg-slate-100 rounded-full h-2 min-w-[80px]">
+                            <div className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                              style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-xs text-slate-500 w-10 text-right">{pct}%</span>
                         </div>
-                        <span className="text-xs text-slate-500 w-10 text-right">{pct}%</span>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

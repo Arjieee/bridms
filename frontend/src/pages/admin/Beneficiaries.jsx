@@ -6,6 +6,18 @@ import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
 import toast from 'react-hot-toast'
 
+const normalizeSectors = (sectors) => {
+  if (Array.isArray(sectors)) return sectors
+  if (typeof sectors === 'string' && sectors.trim()) {
+    try {
+      const parsed = JSON.parse(sectors)
+      if (Array.isArray(parsed)) return parsed
+    } catch (_) {}
+    return [sectors.trim()]
+  }
+  return []
+}
+
 export default function AdminBeneficiaries() {
   const { user } = useAuthStore()
   const { households, puroks, sectors, qrCodes, cycles, proposeMemberStatusChange,
@@ -310,9 +322,9 @@ export default function AdminBeneficiaries() {
                       {hh.hh_code} · {hh.purok_name}
                       {hh.house_no_street && ` · ${hh.house_no_street}`}
                     </div>
-                    {head?.sectors?.length > 0 && (
+                    {normalizeSectors(head?.sectors).length > 0 && (
                       <div className="flex gap-1 mt-1.5 flex-wrap">
-                        {head.sectors.map(s => <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>)}
+                        {normalizeSectors(head?.sectors).map(s => <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>)}
                       </div>
                     )}
                   </div>
@@ -353,9 +365,9 @@ export default function AdminBeneficiaries() {
                               <div className="text-[11px] text-slate-400 mt-0.5">
                                 {m.age}y · {m.sex} · {m.relationship}
                               </div>
-                              {m.sectors?.length > 0 && (
+                              {normalizeSectors(m.sectors).length > 0 && (
                                 <div className="flex gap-1 mt-1 flex-wrap">
-                                  {m.sectors.map(s => <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>)}
+                                  {normalizeSectors(m.sectors).map(s => <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>)}
                                 </div>
                               )}
                             </div>
@@ -423,11 +435,11 @@ export default function AdminBeneficiaries() {
                   </div>
                 ))}
               </div>
-              {memberDetail.sectors?.length > 0 && (
+              {normalizeSectors(memberDetail.sectors).length > 0 && (
                 <div className="mt-3 bg-blue-50 p-3 rounded-xl">
                   <div className="text-[10px] font-bold text-blue-600 uppercase mb-1.5">Sectors</div>
                   <div className="flex flex-wrap gap-1.5">
-                    {memberDetail.sectors.map(s => (
+                    {normalizeSectors(memberDetail.sectors).map(s => (
                       <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>
                     ))}
                   </div>

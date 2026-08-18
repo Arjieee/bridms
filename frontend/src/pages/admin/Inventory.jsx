@@ -272,62 +272,61 @@ export default function AdminInventory() {
         <motion.div key={selectedCat?.id ?? 'all'}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          className="card mobile-card-table min-h-[400px] overflow-hidden">
-          <table className="tbl w-full">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/80">
-                <th className="w-[35%] text-left pl-5 py-3.5">Item</th>
-                <th className="w-[25%] text-left py-3.5">Stock</th>
-                <th className="w-[20%] text-left py-3.5">Status</th>
-                <th className="w-[20%] text-right pr-5 py-3.5">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.length === 0 && (
-                <tr><td colSpan={4}>
-                  <div className="text-center py-10 text-slate-400">
-                    <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
-                    <div className="text-sm">No items in this category</div>
-                  </div>
-                </td></tr>
-              )}
-              {items.map(item => {
-                const isCrit = item.quantity <= item.critical_threshold
-                const isLow = item.quantity <= item.low_threshold
-                const cfg = item.conversion_config
-                const display = cfg?.conversions?.[0]
-                  ? `${item.quantity} ${cfg.base_unit} (≈${(item.quantity / cfg.conversions[0].factor).toFixed(1)} ${cfg.conversions[0].label})`
-                  : `${item.quantity} ${item.unit}`
-                return (
-                  <tr key={item.id} className={`transition-colors hover:bg-slate-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}>
-                    <td data-label="Item" className="pl-5 py-3.5">
-                      <div className="font-semibold text-navy text-sm">{item.name}</div>
-                      <div className="text-[11px] text-slate-400">{item.item_code}</div>
-                      <Calc item={item} />
-                    </td>
-                    <td data-label="Stock" className="py-3.5">
-                      <span className="font-bold text-navy text-sm">{display}</span>
-                    </td>
-                    <td data-label="Status" className="py-3.5">
-                      {isCrit ? <span className="badge badge-critical">Critical</span>
-                        : isLow ? <span className="badge badge-low">Low</span>
-                          : <span className="badge badge-sufficient">OK</span>}
-                    </td>
-                    <td data-label="Actions" className="text-right pr-5 py-3.5">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setStockTarget({ item, mode: 'in' })} className="btn btn-success btn-xs px-3">
-                          <i className="fas fa-plus mr-1" /> In
-                        </button>
-                        <button onClick={() => setStockTarget({ item, mode: 'out' })} className="btn btn-warning btn-xs px-3">
-                          <i className="fas fa-minus mr-1" /> Out
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          className="card mobile-card-table min-h-[400px] flex flex-col justify-center overflow-hidden">
+          {items.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-10 text-center text-slate-400">
+              <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
+              <div className="text-sm">No items in this category</div>
+            </div>
+          ) : (
+            <table className="tbl w-full">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50/80">
+                  <th className="w-[35%] text-left pl-5 py-3.5">Item</th>
+                  <th className="w-[25%] text-left py-3.5">Stock</th>
+                  <th className="w-[20%] text-left py-3.5">Status</th>
+                  <th className="w-[20%] text-right pr-5 py-3.5">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(item => {
+                  const isCrit = item.quantity <= item.critical_threshold
+                  const isLow = item.quantity <= item.low_threshold
+                  const cfg = item.conversion_config
+                  const display = cfg?.conversions?.[0]
+                    ? `${item.quantity} ${cfg.base_unit} (≈${(item.quantity / cfg.conversions[0].factor).toFixed(1)} ${cfg.conversions[0].label})`
+                    : `${item.quantity} ${item.unit}`
+                  return (
+                    <tr key={item.id} className={`transition-colors hover:bg-slate-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}>
+                      <td data-label="Item" className="pl-5 py-3.5">
+                        <div className="font-semibold text-navy text-sm">{item.name}</div>
+                        <div className="text-[11px] text-slate-400">{item.item_code}</div>
+                        <Calc item={item} />
+                      </td>
+                      <td data-label="Stock" className="py-3.5">
+                        <span className="font-bold text-navy text-sm">{display}</span>
+                      </td>
+                      <td data-label="Status" className="py-3.5">
+                        {isCrit ? <span className="badge badge-critical">Critical</span>
+                          : isLow ? <span className="badge badge-low">Low</span>
+                            : <span className="badge badge-sufficient">OK</span>}
+                      </td>
+                      <td data-label="Actions" className="text-right pr-5 py-3.5">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setStockTarget({ item, mode: 'in' })} className="btn btn-success btn-xs px-3">
+                            <i className="fas fa-plus mr-1" /> In
+                          </button>
+                          <button onClick={() => setStockTarget({ item, mode: 'out' })} className="btn btn-warning btn-xs px-3">
+                            <i className="fas fa-minus mr-1" /> Out
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
         </motion.div>
       </AnimatePresence>
 

@@ -313,7 +313,7 @@ export default function AdminDistribution() {
               style={isActive ? { borderColor: s.color, background: `${s.color}12` } : {}}>
               <i className={`fas ${s.icon} text-2xl mb-1.5`}
                 style={{ color: isActive ? s.color : '#94a3b8' }} />
-              <div className="font-display font-bold text-xs text-navy">{s.label}</div>
+              <div className="font-display font-bold text-xs text-navy text-center leading-tight">{s.label}</div>
             </div>
           )
         })}

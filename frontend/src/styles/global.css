@@ -104,6 +104,8 @@
     .mobile-card-table th, .mobile-card-table td, .mobile-card-table tr { display: block; }
     .mobile-card-table thead tr { display: none; }
     .mobile-card-table tbody tr { @apply bg-white rounded-2xl mb-3 border border-slate-100 overflow-hidden shadow-sm; }
+    .mobile-card-table tbody tr.empty-row,
+    .mobile-card-table tbody tr:has(td[colspan]) { @apply bg-transparent border-0 shadow-none mb-0; }
     .mobile-card-table tbody td { @apply flex items-start justify-between px-4 py-2.5 border-b border-slate-50 text-sm gap-3; }
     .mobile-card-table tbody td:last-child { @apply border-b-0; }
     .mobile-card-table tbody td::before {
@@ -114,6 +116,30 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
     .mobile-card-table tbody td > * { margin-left: auto; text-align: right; }
+
+    /* Centered empty state handling in mobile tables */
+    .mobile-card-table tbody td[colspan],
+    .mobile-card-table tbody td.empty-state,
+    .mobile-card-table tbody tr.empty-row td {
+      display: block !important;
+      text-align: center !important;
+      padding: 2rem 1rem !important;
+      border: 0 !important;
+    }
+    .mobile-card-table tbody td[colspan]::before,
+    .mobile-card-table tbody td.empty-state::before,
+    .mobile-card-table tbody tr.empty-row td::before {
+      content: none !important;
+      display: none !important;
+      width: 0 !important;
+    }
+    .mobile-card-table tbody td[colspan] > *,
+    .mobile-card-table tbody td.empty-state > *,
+    .mobile-card-table tbody tr.empty-row td > * {
+      margin-left: auto !important;
+      margin-right: auto !important;
+      text-align: center !important;
+    }
   }
 
   /* ── MODAL ── */
@@ -243,7 +269,7 @@
   .toggle-opt.selected { @apply border-blue-500 bg-blue-50 text-blue-600; }
 
   .cat-card {
-    @apply flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-100 bg-white cursor-pointer transition-colors duration-200 select-none;
+    @apply flex flex-col items-center justify-center p-3 rounded-2xl border-2 border-slate-100 bg-white cursor-pointer transition-colors duration-200 select-none text-center;
     min-height: 90px;
     touch-action: manipulation;
     box-sizing: border-box;
