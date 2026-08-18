@@ -1,0 +1,309 @@
+// Barangay Puerto Relief Inventory & Distribution Monitoring System
+// Prisma Schema Definition
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                            String   @id
+  username                      String   @unique
+  password                      String
+  role                          String   // "admin" | "staff" | "beneficiary"
+  full_name                     String
+  email                         String?
+  contact                       String?
+  is_active                     Boolean  @default(true)
+  is_email_verified             Boolean  @default(false)
+  email_verification_token      String?
+  email_verification_expires_at String?
+  active_session_id             String?
+  last_login_at                 String?
+  current_session               String?  // JSON string
+  created_at                    DateTime @default(now())
+  created_by                    String?
+
+  @@index([username])
+  @@index([role])
+}
+
+model Purok {
+  id          Int      @id @default(autoincrement())
+  name        String
+  is_active   Boolean  @default(true)
+  is_archived Boolean  @default(false)
+  created_at  DateTime @default(now())
+}
+
+model Sector {
+  id         Int      @id @default(autoincrement())
+  code       String   @unique
+  name       String
+  custom     Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+model Category {
+  id    Int    @id @default(autoincrement())
+  name  String
+  icon  String @default("fa-box")
+  color String @default("#2563eb")
+}
+
+model StandardPackage {
+  id          Int    @id @default(autoincrement())
+  sector_code String
+  item_id     Int?
+  item_name   String
+  quantity    Float
+  unit        String
+
+  @@index([sector_code])
+}
+
+model InventoryItem {
+  id                 Int      @id @default(autoincrement())
+  item_code          String   @unique
+  name               String
+  category_id        Int
+  unit               String
+  quantity           Float    @default(0)
+  low_threshold      Float    @default(15)
+  critical_threshold Float    @default(5)
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  @@index([category_id])
+}
+
+model Household {
+  id                 String   @id
+  hh_code            String   @unique
+  purok_id           Int
+  purok_name         String
+  account_id         String?
+  house_no_street    String?
+  status             String   @default("approved")
+  reg_date           String?
+  approved_at        String?
+  approved_by        String?
+  emergency_receiver String?  // JSON string
+  created_at         DateTime @default(now())
+
+  members            Member[]
+
+  @@index([purok_id])
+  @@index([account_id])
+}
+
+model Member {
+  id                String    @id
+  household_id      String
+  household         Household @relation(fields: [household_id], references: [id], onDelete: Cascade)
+  is_head           Boolean   @default(false)
+  fname             String
+  lname             String
+  age               Int       @default(0)
+  age_group         String    @default("adult") // "minor" | "adult" | "senior"
+  sex               String?
+  relationship      String?
+  contact           String?
+  email             String?
+  sectors           String?   // JSON array string e.g. '["pwd", "senior"]'
+  status            String    @default("active") // "active" | "inactive" | "deceased"
+  status_remarks    String?
+  status_updated_at String?
+  approval_status   String    @default("approved") // "pending" | "approved" | "rejected"
+  created_at        DateTime  @default(now())
+
+  @@index([household_id])
+}
+
+model PendingRegistration {
+  id                            String   @id
+  username                      String
+  password                      String
+  purok_id                      Int
+  house_no_street               String?
+  status                        String   @default("pending") // "pending" | "approved" | "rejected"
+  is_email_verified             Boolean  @default(false)
+  email_verification_token      String?
+  email_verification_expires_at String?
+  reg_date                      String?
+  rejection_reason              String?
+  reviewed_at                   String?
+  reviewed_by                   String?
+  head_data                     String   // JSON string
+  members_data                  String?  // JSON string
+  emergency_receiver            String?  // JSON string
+  created_at                    DateTime @default(now())
+
+  @@index([status])
+}
+
+model Cycle {
+  id                String   @id
+  name              String
+  type              String   // "household" | "emergency" | "pwd" | "senior" | ...
+  description       String?
+  items             String?  // JSON array string of items
+  target_purok_ids  String?  // JSON array of target purok ids
+  coverage_details  String?
+  distribution_date String?
+  distribution_time String?
+  claim_address     String?
+  contact_person    String?
+  is_active         Boolean  @default(true)
+  created_at        DateTime @default(now())
+  activated_at      String?
+  deactivated_at    String?
+  created_by        String?
+
+  @@index([is_active])
+}
+
+model QRCode {
+  id           String   @id
+  qr_token     String   @unique
+  cycle_id     String
+  cycle_name   String
+  cycle_type   String
+  household_id String
+  member_id    String?
+  type         String   // "household" | "member"
+  is_claimed   Boolean  @default(false)
+  claimed_at   String?
+  created_at   DateTime @default(now())
+
+  @@index([qr_token])
+  @@index([cycle_id])
+  @@index([household_id])
+}
+
+model Distribution {
+  id             String   @id
+  dist_code      String   @unique
+  cycle_id       String?
+  cycle_name     String?
+  cycle_type     String?
+  household_id   String
+  hh_code        String
+  purok_id       Int?
+  purok_name     String?
+  head_fname     String?
+  head_lname     String?
+  member_id      String?
+  dist_date      String
+  type           String   @default("standard")
+  special_reason String?
+  remarks        String?
+  officials      String?  // JSON array string
+  items          String?  // JSON array string
+  recorded_by    String?
+  recorded_at    DateTime @default(now())
+
+  @@index([dist_code])
+  @@index([cycle_id])
+  @@index([household_id])
+}
+
+model Supplier {
+  id             String   @id
+  sup_code       String   @unique
+  org_name       String
+  contact_person String?
+  contact_number String?
+  email          String?
+  items          String?  // JSON array string
+  recorded_by    String?
+  created_at     DateTime @default(now())
+}
+
+model Notification {
+  id             String   @id
+  recipient_id   String?
+  recipient_role String?
+  type           String   // "registration" | "cycle" | "distribution" | "stock_low" | ...
+  title          String
+  message        String
+  link           String?
+  is_read        Boolean  @default(false)
+  read_at        String?
+  created_at     DateTime @default(now())
+
+  @@index([recipient_id])
+  @@index([recipient_role])
+}
+
+model ActivityLog {
+  id         String   @id
+  account_id String?
+  username   String?
+  role       String?
+  action     String
+  details    String?
+  ip_address String?
+  user_agent String?
+  created_at DateTime @default(now())
+
+  @@index([action])
+  @@index([account_id])
+}
+
+model PasswordReset {
+  id         String   @id
+  account_id String
+  username   String
+  email      String?
+  otp        String
+  used       Boolean  @default(false)
+  expires_at String
+  used_at    String?
+  created_at DateTime @default(now())
+
+  @@index([username])
+  @@index([otp])
+}
+
+model PendingMemberStatusChange {
+  id               String   @id
+  hh_id            String
+  hh_code          String
+  purok_name       String?
+  member_id        String
+  member_name      String
+  current_status   String
+  new_status       String
+  remarks          String?
+  proposed_by      String?
+  proposed_by_name String?
+  status           String   @default("pending") // "pending" | "confirmed" | "disputed_resolved" | "auto_confirmed"
+  dispute_reason   String?
+  proposed_at      String
+  reviewed_by      String?
+  reviewed_at      String?
+
+  @@index([hh_id])
+  @@index([status])
+}
+
+model PendingMemberAddition {
+  id           String   @id
+  household_id String
+  hh_code      String
+  purok_name   String?
+  head_name    String?
+  member_id    String
+  member_name  String
+  member_data  String   // JSON string
+  status       String   @default("pending") // "pending" | "approved" | "rejected"
+  created_at   DateTime @default(now())
+
+  @@index([household_id])
+  @@index([status])
+}

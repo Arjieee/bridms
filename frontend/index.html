@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Barangay Puerto — Relief Management System</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2026" />
+    <link rel="icon" type="image/png" href="/logo.png?v=2026" />
+    <link rel="shortcut icon" href="/favicon.ico?v=2026" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2026" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  </head>
+  <body>
+    <div id="root">
+      <style>
+        .init-loader-bg {
+          position: fixed; inset: 0; z-index: 9999;
+          display: flex; flex-direction: column; align-items: center; justify-content: center;
+          background: #0f172a; color: #ffffff; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+          user-select: none;
+        }
+        .init-loader-logo {
+          width: 72px; height: 72px; border-radius: 9999px; background: #ffffff;
+          padding: 4px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); margin-bottom: 20px;
+        }
+        .init-loader-logo img { width: 100%; height: 100%; object-fit: cover; border-radius: 9999px; }
+        .init-loader-title { font-size: 18px; font-weight: 800; margin: 0 0 4px 0; color: #ffffff; text-align: center; }
+        .init-loader-sub { font-size: 12px; color: #94a3b8; margin: 0 0 24px 0; text-align: center; font-weight: 500; }
+        .init-loader-bar {
+          width: 180px; height: 6px; background: #1e293b; border-radius: 9999px; overflow: hidden; position: relative; margin-bottom: 16px;
+        }
+        .init-loader-bar-fill {
+          position: absolute; top: 0; bottom: 0; width: 100%;
+          background: linear-gradient(90deg, #3b82f6, #6366f1, #10b981);
+          border-radius: 9999px; animation: initPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes initPulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+      </style>
+      <div className="init-loader-bg" class="init-loader-bg">
+        <div class="init-loader-logo">
+          <img src="/logo.png" alt="Barangay Puerto Logo" />
+        </div>
+        <h1 class="init-loader-title">Barangay Puerto</h1>
+        <p class="init-loader-sub">Relief Management & Distribution System</p>
+        <div class="init-loader-bar">
+          <div class="init-loader-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

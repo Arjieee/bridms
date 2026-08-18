@@ -1,0 +1,183 @@
+import { useState, useEffect, useRef } from 'react'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { useAuthStore } from '../../store/authStore'
+import { useAppStore } from '../../store/appStore'
+import NotifBell from '../../components/ui/NotifBell'
+import ProfileAvatar from '../../components/ui/ProfileAvatar'
+import CycleHeaderWidget from '../../components/ui/CycleHeaderWidget'
+import LogoutConfirm from '../../components/ui/LogoutConfirm'
+import { useRedDots } from '../../components/ui/useRedDots'
+import { PageSkeleton } from '../../components/ui/Skeleton'
+import toast from 'react-hot-toast'
+
+const NAV = [
+  { path: '/admin',               icon: 'fa-chart-pie',     label: 'Dashboard',     section: 'Main' },
+  { path: '/admin/inventory',     icon: 'fa-boxes-stacked', label: 'Inventory' },
+  { path: '/admin/beneficiaries', icon: 'fa-users',         label: 'Beneficiaries' },
+  { path: '/admin/qr',            icon: 'fa-qrcode',        label: 'QR Verification' },
+  { path: '/admin/distribution',  icon: 'fa-truck',         label: 'Distribution',  section: 'Operations' },
+  { path: '/admin/suppliers',     icon: 'fa-handshake',     label: 'Suppliers' },
+  { path: '/admin/reports',       icon: 'fa-file-lines',    label: 'Reports' },
+  { path: '/admin/settings',      icon: 'fa-gear',          label: 'Settings',      section: 'System' },
+]
+
+const BOTTOM_NAV = [
+  { path: '/admin',              icon: 'fa-chart-pie',     label: 'Home' },
+  { path: '/admin/inventory',    icon: 'fa-boxes-stacked', label: 'Inventory' },
+  { path: '/admin/qr',           icon: 'fa-qrcode',        label: 'QR Scan' },
+  { path: '/admin/distribution', icon: 'fa-truck',         label: 'Distribute' },
+  { path: '/admin/settings',     icon: 'fa-gear',          label: 'Settings' },
+]
+
+export default function AdminLayout() {
+  const { user } = useAuthStore()
+  const { logout, fetchInitialData } = useAppStore()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024)
+  const [showLogout, setShowLogout] = useState(false)
+  const [navLoading, setNavLoading] = useState(false)
+  const redDots = useRedDots()
+  const mainRef = useRef(null)
+
+  useEffect(() => {
+    fetchInitialData()
+    const fn = () => {
+      const d = window.innerWidth >= 1024
+      setIsDesktop(d)
+      if (d) setSidebarOpen(false)
+    }
+    window.addEventListener('resize', fn)
+    return () => window.removeEventListener('resize', fn)
+  }, [fetchInitialData])
+
+  useEffect(() => {
+    setNavLoading(true)
+    const t = setTimeout(() => setNavLoading(false), 220)
+    if (mainRef.current) {
+      mainRef.current.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    return () => clearTimeout(t)
+  }, [location.pathname])
+
+  const label = NAV.find(n => n.path === location.pathname)?.label || 'Dashboard'
+
+  const doLogout = () => {
+    setShowLogout(false)
+    logout()
+    window.scrollTo({ top: 0, behavior: 'instant' })
+    navigate('/')
+    toast.success('Logged out successfully.')
+  }
+
+  return (
+    <div className="flex h-screen max-h-screen overflow-hidden bg-slate-50">
+      <aside className={`sidebar sidebar-navy ${!isDesktop && sidebarOpen ? 'mobile-open' : ''}`}>
+        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[.07] flex-shrink-0">
+          <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center flex-shrink-0 shadow-md border border-white/20">
+            <img src="/logo.png" alt="Barangay Puerto Seal" className="w-full h-full object-cover rounded-full" />
+          </div>
+          <div className="min-w-0">
+            <div className="font-display font-extrabold text-[13px] text-white truncate">Barangay Puerto</div>
+            <div className="text-[10px] text-white/40 truncate">Admin Portal</div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto py-2">
+          {NAV.map(item => (
+            <div key={item.path}>
+              {item.section && (
+                <div className="px-5 pt-4 pb-1 text-[9px] font-bold text-white/30 uppercase tracking-widest">
+                  {item.section}
+                </div>
+              )}
+              <div
+                onClick={() => { navigate(item.path); if (!isDesktop) setSidebarOpen(false) }}
+                className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}>
+                <span className="w-4 text-center text-[13px] flex-shrink-0">
+                  <i className={`fas ${item.icon}`} />
+                </span>
+                <span className="truncate flex-1">{item.label}</span>
+                {redDots[item.path] > 0 && (
+                  <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0 animate-pulse" title={`${redDots[item.path]} pending`} />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="px-4 py-3 border-t border-white/[.07] flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+              style={{ background: user?.photo ? '#fff' : '#fbbf24' }}>
+              {user?.photo
+                ? <img src={user.photo} alt="" className="w-full h-full object-cover" />
+                : (user?.full_name?.[0] || 'A')}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white truncate">{user?.full_name}</div>
+              <div className="text-[10px] text-white/40">Administrator</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {!isDesktop && sidebarOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <div className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden"
+        style={isDesktop ? { marginLeft: 256 } : { marginLeft: 0 }}>
+        <div className="topbar">
+          <div className="flex items-center gap-3 min-w-0">
+            <button onClick={() => setSidebarOpen(o => !o)}
+              className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-navy flex-shrink-0 lg:hidden hover:bg-slate-200">
+              <i className="fas fa-bars" />
+            </button>
+            <span className="font-display font-bold text-sm sm:text-base text-navy truncate">{label}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CycleHeaderWidget />
+            <NotifBell />
+            <ProfileAvatar />
+          </div>
+        </div>
+
+        <main ref={mainRef} className="flex-1 page-content overflow-y-auto"
+          style={{ paddingBottom: isDesktop ? '24px' : 'calc(72px + env(safe-area-inset-bottom))' }}>
+          {navLoading ? (
+            <PageSkeleton route={location.pathname} />
+          ) : (
+            <motion.div key={location.pathname}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.15 }}>
+              <Outlet />
+            </motion.div>
+          )}
+        </main>
+      </div>
+
+      <nav className="bottom-nav">
+        {BOTTOM_NAV.map(item => (
+          <div key={item.path}
+            className={`bottom-nav-item ${location.pathname === item.path ? 'active' : ''}`}
+            onClick={() => navigate(item.path)}>
+            <div className="relative">
+              <i className={`fas ${item.icon}`} />
+              {redDots[item.path] > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              )}
+            </div>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </nav>
+
+      {showLogout && <LogoutConfirm onCancel={() => setShowLogout(false)} onConfirm={doLogout} />}
+    </div>
+  )
+}
