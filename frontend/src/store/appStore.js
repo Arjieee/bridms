@@ -56,6 +56,14 @@ const SEED_STANDARD_PACKAGES = {
   ],
 };
 
+const SEED_PUROKS = [
+  { id: 1, name: 'Purok 1', is_active: true, is_archived: false },
+  { id: 2, name: 'Purok 2', is_active: true, is_archived: false },
+  { id: 3, name: 'Purok 3', is_active: true, is_archived: false },
+  { id: 4, name: 'Purok 4', is_active: true, is_archived: false },
+  { id: 5, name: 'Purok 5', is_active: true, is_archived: false },
+];
+
 // Clean up any legacy mock data cached in browser localStorage
 if (typeof window !== 'undefined') {
   try {
@@ -65,7 +73,7 @@ if (typeof window !== 'undefined') {
 
 export const useAppStore = create((set, get) => ({
   accounts: [],
-  puroks: [],
+  puroks: SEED_PUROKS,
   sectors: [],
   categories: SEED_CATEGORIES,
   inventory: [],
@@ -277,6 +285,19 @@ export const useAppStore = create((set, get) => ({
         } catch (err) {
           return { ok: false, message: err.message };
         }
+      },
+
+      fetchPuroks: async () => {
+        try {
+          const res = await apiFetch('/settings/puroks').catch(() => ({ puroks: [] }));
+          if (Array.isArray(res.puroks) && res.puroks.length > 0) {
+            set({ puroks: res.puroks });
+            return res.puroks;
+          }
+        } catch (err) {
+          console.error('Failed to fetch puroks:', err);
+        }
+        return get().puroks;
       },
 
       addSector: async (data) => {

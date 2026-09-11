@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../store/appStore'
@@ -11,11 +11,17 @@ const blankMember = () => ({ fname: '', lname: '', age: '', sex: '', relationshi
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const { addPendingReg, puroks, pendingRegistrations, accounts, households } = useAppStore()
+  const { addPendingReg, puroks, fetchPuroks, pendingRegistrations, accounts, households } = useAppStore()
   const [step, setStep] = useState(1)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [duplicateWarning, setDuplicateWarning] = useState(null)
+
+  useEffect(() => {
+    if (fetchPuroks) {
+      fetchPuroks()
+    }
+  }, [fetchPuroks])
 
   const regPasswordRef = useRef(null)
   const regConfirmPwRef = useRef(null)
@@ -211,7 +217,9 @@ export default function RegisterPage() {
                   <select className={`form-input ${errors.purok ? 'error' : ''}`}
                     value={purokId} onChange={e => setPurokId(e.target.value)}>
                     <option value="">Select your Purok</option>
-                    {puroks.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                    {(puroks || []).filter(p => !p.is_archived).map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
                   </select>
                   {errors.purok && <div className="text-red-500 text-xs mt-1.5">{errors.purok}</div>}
                 </div>
