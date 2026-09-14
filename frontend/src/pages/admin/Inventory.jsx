@@ -272,7 +272,7 @@ export default function AdminInventory() {
         <motion.div key={selectedCat?.id ?? 'all'}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          className="card mobile-card-table min-h-[400px] flex flex-col justify-center overflow-hidden">
+          className="card mobile-card-table min-h-[400px] flex flex-col overflow-hidden">
           {items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-10 text-center text-slate-400">
               <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
