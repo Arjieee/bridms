@@ -36,6 +36,10 @@ export const verifyQRToken = async (req, res) => {
   try {
     const { token } = req.params;
     let trimmed = decodeURIComponent(token || '').trim();
+
+    if (trimmed.includes('token=')) {
+      trimmed = trimmed.split('token=')[1].split('&')[0].trim();
+    }
     if (trimmed.startsWith('BPR-SECURED::')) {
       trimmed = trimmed.replace('BPR-SECURED::', '').trim();
     }
@@ -54,7 +58,11 @@ export const verifyQRToken = async (req, res) => {
     });
 
     if (!qr) {
-      return res.status(404).json({ status: 'not_found', message: 'QR code not registered in this system.' });
+      return res.status(404).json({
+        status: 'not_found',
+        is_system_verified: false,
+        message: 'QR code not registered in this system. Not an authentic relief pass.',
+      });
     }
 
     const cycle = await prisma.cycle.findUnique({
