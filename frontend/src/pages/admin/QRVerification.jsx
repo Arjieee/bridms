@@ -16,8 +16,12 @@ export default function AdminQRVerification() {
   const [purokFilter, setPurok] = useState('')
   const [claimFilter, setClaimFilter] = useState('all') // 'all' | 'unclaimed' | 'claimed'
   const [selectedCycleId, setSelectedCycleId] = useState(null)
+  const [availableCameras, setAvailableCameras] = useState([])
+  const [selectedCameraId, setSelectedCameraId] = useState('')
+  const [isInitializingCam, setIsInitializingCam] = useState(false)
   const html5Ref = useRef(null)
   const resultRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (result && resultRef.current) {
@@ -46,8 +50,8 @@ export default function AdminQRVerification() {
         hh_code: hh?.hh_code,
         purok: hh?.purok_name,
         purok_id: hh?.purok_id,
-        fname: member?.fname,
-        lname: member?.lname,
+        fname: member?.fname || head?.fname,
+        lname: member?.lname || head?.lname,
       }
     })
     .filter(e => !purokFilter || String(e.purok_id) === purokFilter)
@@ -64,33 +68,117 @@ export default function AdminQRVerification() {
   const stopScan = async () => {
     try {
       if (html5Ref.current) {
-        await html5Ref.current.stop()
+        if (html5Ref.current.isScanning) {
+          await html5Ref.current.stop()
+        }
         await html5Ref.current.clear()
         html5Ref.current = null
       }
-    } catch (e) { /* swallow */ }
+    } catch (e) {
+      console.warn('Scanner stop error:', e)
+    }
     setScanning(false)
+    setIsInitializingCam(false)
   }
 
   useEffect(() => () => { stopScan() }, [])
 
-  const startScan = async () => {
+  const startScan = async (overrideCamId = null) => {
     setResult(null)
+    setIsInitializingCam(true)
     setScanning(true)
+
     try {
       const { Html5Qrcode } = await import('html5-qrcode')
-      // Wait for DOM
-      await new Promise(r => setTimeout(r, 100))
-      html5Ref.current = new Html5Qrcode('qr-reader-v2')
-      await html5Ref.current.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 220, height: 220 } },
-        (decoded) => { stopScan(); handleScan(decoded) },
-        () => { /* ignore frame errors */ }
-      )
+
+      // Clean up previous instance
+      if (html5Ref.current) {
+        try {
+          if (html5Ref.current.isScanning) await html5Ref.current.stop()
+          await html5Ref.current.clear()
+        } catch {}
+        html5Ref.current = null
+      }
+
+      await new Promise(r => setTimeout(r, 150))
+
+      const html5QrCode = new Html5Qrcode('qr-reader-v2')
+      html5Ref.current = html5QrCode
+
+      // 1. Enumerate available cameras
+      let devices = []
+      try {
+        devices = await Html5Qrcode.getCameras()
+        if (devices && devices.length > 0) {
+          setAvailableCameras(devices)
+        }
+      } catch (enumErr) {
+        console.warn('Camera enumeration error:', enumErr)
+      }
+
+      // 2. Select best camera
+      let targetCamera = null
+      if (overrideCamId) {
+        targetCamera = overrideCamId
+      } else if (selectedCameraId && devices.some(d => d.id === selectedCameraId)) {
+        targetCamera = selectedCameraId
+      } else if (devices.length > 0) {
+        const rearCam = devices.find(d => /back|rear|environment|facing\s*back/i.test(d.label))
+        targetCamera = rearCam ? rearCam.id : devices[0].id
+        setSelectedCameraId(targetCamera)
+      } else {
+        targetCamera = { facingMode: 'environment' }
+      }
+
+      const qrConfig = {
+        fps: 15,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+          const minDim = Math.min(viewfinderWidth, viewfinderHeight)
+          const size = Math.max(160, Math.floor(minDim * 0.72))
+          return { width: size, height: size }
+        },
+        aspectRatio: 1.0,
+      }
+
+      const onScanSuccess = (decoded) => {
+        stopScan()
+        handleScan(decoded)
+      }
+
+      try {
+        await html5QrCode.start(targetCamera, qrConfig, onScanSuccess, () => {})
+        setIsInitializingCam(false)
+      } catch (firstErr) {
+        console.warn('Initial camera config failed, attempting fallback...', firstErr)
+        if (devices.length > 0) {
+          await html5QrCode.start(devices[0].id, qrConfig, onScanSuccess, () => {})
+          setSelectedCameraId(devices[0].id)
+        } else {
+          await html5QrCode.start({ facingMode: 'user' }, qrConfig, onScanSuccess, () => {})
+        }
+        setIsInitializingCam(false)
+      }
     } catch (err) {
-      toast.error('Camera not available. Try manual entry or check browser permissions.')
+      console.error('QR Scanner Start Failure:', err)
+      toast.error('Unable to access camera. Please verify camera permissions or upload an image.')
       setScanning(false)
+      setIsInitializingCam(false)
+    }
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const { Html5Qrcode } = await import('html5-qrcode')
+      const html5QrCode = new Html5Qrcode('qr-reader-v2')
+      const decodedText = await html5QrCode.scanFile(file, true)
+      html5QrCode.clear()
+      handleScan(decodedText)
+    } catch (err) {
+      toast.error('No readable QR code found in uploaded image. Please try another image or manual entry.')
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }
 
@@ -167,18 +255,87 @@ export default function AdminQRVerification() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="card p-4 space-y-4">
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
-            <div id="qr-reader-v2" className="overflow-hidden rounded-2xl bg-black/90 min-h-[220px]" />
+            {/* Hidden file upload for scanning QR from photo/image */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
 
-            {!scanning ? (
-              <button onClick={startScan} disabled={!activeCycle}
-                className="btn btn-primary mt-3 w-full justify-center shadow-xs">
-                <i className="fas fa-camera mr-1.5" /> Start Camera Scanner
-              </button>
-            ) : (
-              <button onClick={stopScan} className="btn btn-gray mt-3 w-full justify-center">
-                <i className="fas fa-square mr-1.5 text-red-500" /> Stop Camera
-              </button>
-            )}
+            {/* Video Viewport Container */}
+            <div className="relative overflow-hidden rounded-2xl bg-slate-900 min-h-[240px] flex items-center justify-center">
+              <div id="qr-reader-v2" className="w-full h-full min-h-[240px]" />
+
+              {!scanning && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-slate-900/90 text-slate-300">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3 shadow-inner">
+                    <i className="fas fa-qrcode text-2xl text-emerald-400" />
+                  </div>
+                  <div className="text-xs font-bold text-white mb-1">Camera Scanner Ready</div>
+                  <div className="text-[11px] text-slate-400 max-w-xs">
+                    Works on both mobile phone cameras and laptop/PC webcams.
+                  </div>
+                </div>
+              )}
+
+              {isInitializingCam && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/80 text-white z-10">
+                  <i className="fas fa-circle-notch fa-spin text-2xl text-emerald-400 mb-2" />
+                  <span className="text-xs font-medium">Starting camera stream...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Scanner Controls & Camera Selector */}
+            <div className="mt-3 space-y-2">
+              {availableCameras.length > 1 && scanning && (
+                <div className="flex items-center gap-2 bg-white px-2.5 py-1.5 rounded-xl border border-slate-200">
+                  <i className="fas fa-video text-slate-400 text-xs" />
+                  <select
+                    value={selectedCameraId}
+                    onChange={e => {
+                      setSelectedCameraId(e.target.value)
+                      startScan(e.target.value)
+                    }}
+                    className="bg-transparent border-none text-xs font-bold text-navy focus:ring-0 cursor-pointer w-full"
+                  >
+                    {availableCameras.map((cam, idx) => (
+                      <option key={cam.id} value={cam.id}>
+                        {cam.label || `Camera ${idx + 1}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {!scanning ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    onClick={() => startScan()}
+                    disabled={!activeCycle}
+                    className="btn btn-primary justify-center shadow-xs text-xs py-2.5"
+                  >
+                    <i className="fas fa-camera mr-1.5" /> Start Camera Scanner
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={!activeCycle}
+                    className="btn btn-outline justify-center text-xs py-2.5 hover:bg-slate-50"
+                  >
+                    <i className="fas fa-file-image text-emerald-600 mr-1.5" /> Scan QR Image
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={stopScan}
+                  className="btn btn-gray w-full justify-center text-xs py-2.5"
+                >
+                  <i className="fas fa-square mr-1.5 text-red-500" /> Stop Camera Scanner
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="border-t border-slate-100 pt-4">

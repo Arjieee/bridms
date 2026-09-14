@@ -375,3 +375,47 @@
     pointer-events: none;
   }
 }
+
+/* ── HTML5 QR Code Scanner Customization & White Screen Fix ── */
+#qr-reader-v2 {
+  position: relative !important;
+  background-color: #0b1329 !important;
+  border-radius: 1rem !important;
+  overflow: hidden !important;
+  border: 1px solid #1e293b !important;
+  min-height: 240px !important;
+}
+
+#qr-reader-v2 video {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 320px !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 1rem !important;
+  background-color: #0b1329 !important;
+}
+
+#qr-reader-v2__scan_region {
+  background: transparent !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#qr-reader-v2__scan_region video {
+  border-radius: 1rem !important;
+}
+
+#qr-reader-v2__dashboard {
+  background: transparent !important;
+}
+
+#qr-reader-v2 img {
+  display: none !important;
+}
+
+#qr-reader-v2__header_message {
+  display: none !important;
+}
+

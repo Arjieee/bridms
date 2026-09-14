@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import NotifBell from '../../components/ui/NotifBell'
 import ProfileAvatar from '../../components/ui/ProfileAvatar'
+import CycleHeaderWidget from '../../components/ui/CycleHeaderWidget'
 import LogoutConfirm from '../../components/ui/LogoutConfirm'
 import { useRedDots } from '../../components/ui/useRedDots'
 import { PageSkeleton } from '../../components/ui/Skeleton'
@@ -121,7 +122,7 @@ export default function BeneficiaryLayout() {
         
         {/* Sticky Desktop & Mobile Topbar */}
         <div className="topbar">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             {/* 3-Line Hamburger Menu (☰) on Mobile View */}
             <button onClick={() => setSidebarOpen(o => !o)}
               className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-navy flex-shrink-0 lg:hidden hover:bg-slate-200 transition-colors cursor-pointer"
@@ -131,8 +132,9 @@ export default function BeneficiaryLayout() {
             <span className="font-display font-bold text-sm sm:text-base text-navy truncate">{pageLabel}</span>
           </div>
 
-          {/* Clean Centered Flex Row for Notification and Profile */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Clean Centered Flex Row for Cycle, Notification and Profile */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+            <CycleHeaderWidget />
             <NotifBell />
             <ProfileAvatar />
           </div>
