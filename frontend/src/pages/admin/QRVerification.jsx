@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import jsQR from 'jsqr'
@@ -6,10 +6,41 @@ import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 
+const normalizeSectors = (sectors) => {
+  if (Array.isArray(sectors)) return sectors
+  if (typeof sectors === 'string' && sectors.trim()) {
+    try {
+      const parsed = JSON.parse(sectors)
+      if (Array.isArray(parsed)) return parsed
+    } catch (_) {}
+    return [sectors.trim()]
+  }
+  return []
+}
+
+// Safe helper to invoke jsQR whether imported as default or named function
+function decodeQR(imageData, width, height) {
+  try {
+    const fn = typeof jsQR === 'function' ? jsQR : jsQR?.default || window?.jsQR
+    if (typeof fn === 'function') {
+      return fn(imageData, width, height, { inversionAttempts: 'dontInvert' })
+    }
+  } catch (e) {
+    console.warn('QR decode error:', e)
+  }
+  return null
+}
+
 export default function AdminQRVerification() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { scanQR, claimQR, cycles, puroks, qrCodes, households } = useAppStore()
+  const scanQR = useAppStore(s => s.scanQR)
+  const claimQR = useAppStore(s => s.claimQR)
+  const cycles = useAppStore(s => s.cycles) || []
+  const puroks = useAppStore(s => s.puroks) || []
+  const qrCodes = useAppStore(s => s.qrCodes) || []
+  const households = useAppStore(s => s.households) || []
+
   const [scanning, setScanning] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [result, setResult] = useState(null)
@@ -31,32 +62,39 @@ export default function AdminQRVerification() {
     }
   }, [result])
 
-  const activeCycles = (cycles || []).filter((c) => {
-    if (!c.is_active) return false;
-    const cQRs = (qrCodes || []).filter((q) => q.cycle_id === c.id);
-    const totalQRs = cQRs.length;
-    const claimedQRs = cQRs.filter((q) => q.is_claimed).length;
-    const isCompleted = totalQRs > 0 && claimedQRs === totalQRs;
-    return !isCompleted;
-  });
+  const activeCycles = useMemo(() => {
+    return (cycles || []).filter((c) => {
+      if (!c || !c.is_active) return false;
+      const cQRs = (qrCodes || []).filter((q) => q && q.cycle_id === c.id);
+      const totalQRs = cQRs.length;
+      const claimedQRs = cQRs.filter((q) => q && q.is_claimed).length;
+      const isCompleted = totalQRs > 0 && claimedQRs === totalQRs;
+      return !isCompleted;
+    });
+  }, [cycles, qrCodes]);
+
   const activeCycle = activeCycles.find(c => String(c.id) === String(selectedCycleId)) || activeCycles[0]
 
-  const eligibles = (qrCodes || [])
-    .filter(q => String(q.cycle_id) === String(activeCycle?.id))
-    .map(q => {
-      const hh = households.find(h => h.id === q.household_id)
-      const head = hh?.members?.find(m => m.is_head)
-      const member = q.member_id ? hh?.members?.find(m => m.id === q.member_id) : head
-      return {
-        ...q,
-        hh_code: hh?.hh_code,
-        purok: hh?.purok_name,
-        purok_id: hh?.purok_id,
-        fname: member?.fname || head?.fname,
-        lname: member?.lname || head?.lname,
-      }
-    })
-    .filter(e => !purokFilter || String(e.purok_id) === purokFilter)
+  const eligibles = useMemo(() => {
+    if (!activeCycle) return []
+    return (qrCodes || [])
+      .filter(q => q && String(q.cycle_id) === String(activeCycle.id))
+      .map(q => {
+        const hh = (households || []).find(h => h && h.id === q.household_id)
+        const members = Array.isArray(hh?.members) ? hh.members : []
+        const head = members.find(m => m && m.is_head)
+        const member = q.member_id ? members.find(m => m && m.id === q.member_id) : head
+        return {
+          ...q,
+          hh_code: hh?.hh_code || 'N/A',
+          purok: hh?.purok_name || 'N/A',
+          purok_id: hh?.purok_id,
+          fname: member?.fname || head?.fname || 'Beneficiary',
+          lname: member?.lname || head?.lname || '',
+        }
+      })
+      .filter(e => !purokFilter || String(e.purok_id) === purokFilter)
+  }, [qrCodes, activeCycle, households, purokFilter])
 
   const claimed = eligibles.filter(e => e.is_claimed).length
   const remaining = eligibles.length - claimed
@@ -124,9 +162,7 @@ export default function AdminQRVerification() {
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
-        })
+        const code = decodeQR(imageData.data, imageData.width, imageData.height)
 
         if (code && code.data && code.data.trim()) {
           stopScan()
@@ -418,12 +454,12 @@ export default function AdminQRVerification() {
                                   </div>
 
                                   {/* Sector Badges */}
-                                  {m.sectors && m.sectors.length > 0 ? (
+                                  {normalizeSectors(m.sectors).length > 0 ? (
                                     <div className="flex items-center gap-1 mt-1 flex-wrap">
                                       <span className="text-[10px] text-slate-400 font-medium">Sectors:</span>
-                                      {m.sectors.map(sec => (
+                                      {normalizeSectors(m.sectors).map(sec => (
                                         <span key={sec} className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 capitalize">
-                                          {sec.replace(/_/g, ' ')}
+                                          {String(sec).replace(/_/g, ' ')}
                                         </span>
                                       ))}
                                     </div>

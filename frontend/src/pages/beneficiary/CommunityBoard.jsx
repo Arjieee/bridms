@@ -3,6 +3,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 
+const normalizeSectors = (sectors) => {
+  if (Array.isArray(sectors)) return sectors
+  if (typeof sectors === 'string' && sectors.trim()) {
+    try {
+      const parsed = JSON.parse(sectors)
+      if (Array.isArray(parsed)) return parsed
+    } catch (_) {}
+    return [sectors.trim()]
+  }
+  return []
+}
+
 export default function BeneficiaryCommunity() {
   const { distributions, puroks, cycles, qrCodes, households, sectors } = useAppStore()
   const [selectedCycleId, setSelectedCycleId] = useState(null)
@@ -313,9 +325,9 @@ export default function BeneficiaryCommunity() {
                         </div>
 
                         {/* Sectors badges */}
-                        {b.sectors && b.sectors.length > 0 && (
+                        {normalizeSectors(b.sectors).length > 0 && (
                           <div className="flex gap-1 mt-1.5 flex-wrap">
-                            {b.sectors.map(secCode => {
+                            {normalizeSectors(b.sectors).map(secCode => {
                               const sObj = sectors.find(s => s.code === secCode)
                               return (
                                 <span

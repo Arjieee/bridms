@@ -6,6 +6,7 @@ import { apiFetch } from "./api/client";
 import { useGlobalEscape } from "./components/ui/useGlobalEscape";
 import { useSessionSecurity } from "./hooks/useSessionSecurity";
 import InitialLoadingScreen from "./components/ui/InitialLoadingScreen";
+import ErrorBoundary from "./components/ui/ErrorBoundary";
 
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -117,7 +118,7 @@ export default function App() {
   useGlobalEscape();
   useSessionSecurity();
   return (
-    <>
+    <ErrorBoundary>
       <ScrollToTop />
       <Toaster
         position="top-center"
@@ -207,6 +208,6 @@ export default function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ErrorBoundary>
   );
 }
