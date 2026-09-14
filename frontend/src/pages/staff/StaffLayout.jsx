@@ -128,14 +128,14 @@ export default function StaffLayout() {
       <div className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden"
         style={isDesktop ? { marginLeft: 256 } : { marginLeft: 0 }}>
         <div className="topbar">
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
             <button onClick={() => setSidebarOpen(o => !o)}
               className="w-9 h-9 bg-slate-100 hover:bg-slate-200 text-navy rounded-xl flex items-center justify-center flex-shrink-0 lg:hidden transition-colors cursor-pointer">
               <i className="fas fa-bars" />
             </button>
             <span className="font-display font-bold text-sm sm:text-base text-navy truncate">{label}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             <CycleHeaderWidget />
             <NotifBell />
             <ProfileAvatar />

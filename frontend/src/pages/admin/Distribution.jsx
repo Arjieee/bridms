@@ -111,6 +111,17 @@ export default function AdminDistribution() {
     }
   }
 
+  const loadDefaultPackage = () => {
+    const targetType = selectedType || 'household'
+    const pkg = standardPackages[targetType] || standardPackages['household'] || []
+    if (pkg.length > 0) {
+      setPkgItems(pkg.map(p => ({ ...p })))
+      toast.success(`Loaded standard package for ${targetType}!`)
+    } else {
+      toast.error('No standard package template configured.')
+    }
+  }
+
   // Determine which households have already received in the currently active cycle of this type
   const receivedHouseholdIds = (() => {
     if (!activeCycle) return new Set()
@@ -347,12 +358,15 @@ export default function AdminDistribution() {
                   onChange={e => setMonthFilter(e.target.value)}
                   className="form-input text-xs py-1 px-2.5 bg-white font-medium border-slate-200 rounded-lg text-slate-700 cursor-pointer"
                 >
-                  <option value="">📅 All Month History</option>
+                  <option value="">
+                    📅 All Month History {availableMonths.length === 0 ? '(0 logs)' : `(${distributions.length} logs)`}
+                  </option>
                   {availableMonths.map(m => {
                     const [year, month] = m.split('-')
                     const dateObj = new Date(parseInt(year), parseInt(month) - 1, 1)
                     const label = dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-                    return <option key={m} value={m}>{label}</option>
+                    const count = distributions.filter(d => (!selectedType || d.cycle_type === selectedType) && d.dist_date?.startsWith(m)).length
+                    return <option key={m} value={m}>{label} ({count} logs)</option>
                   })}
                 </select>
               </div>
@@ -382,13 +396,13 @@ export default function AdminDistribution() {
           </div>
 
           {/* Purok Filter Tabs */}
-          <div className="flex items-center justify-between gap-2 flex-wrap pt-0.5">
+          <div className="space-y-1.5 pt-0.5">
             <div className="text-[11px] text-slate-500 font-semibold flex items-center gap-1">
               <i className="fas fa-filter text-slate-400 text-[10px]" /> Purok Filter:
             </div>
-            <div className="tab-scroll">
+            <div className="tab-scroll w-full py-0.5">
               <div className={`purok-tab ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
-              {puroks.map(p => (
+              {puroks.filter(p => !p.is_archived).map(p => (
                 <div key={p.id} className={`purok-tab ${purokFilter === String(p.id) ? 'active' : ''}`}
                   onClick={() => setPurok(String(p.id))}>{p.name}</div>
               ))}
@@ -505,10 +519,16 @@ export default function AdminDistribution() {
 
               {/* Step 1: Select Cycle (Only shown when NOT Special Assistance) */}
               {!isSpecial && (
-                <div className="form-group">
-                  <label className="form-label font-bold text-navy text-sm">
-                    1. Select Distribution Cycle *
-                  </label>
+                <div className="form-group space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="form-label font-bold text-navy text-sm mb-0">
+                      1. Select Distribution Cycle *
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {cycles.length} {cycles.length === 1 ? 'cycle' : 'cycles'} available
+                    </span>
+                  </div>
+
                   <select className="form-input font-medium"
                     value={selectedCycleId}
                     onChange={e => {
@@ -516,7 +536,11 @@ export default function AdminDistribution() {
                       setSelectedCycleId(val)
                       initPackageForCycle(val, isSpecial)
                     }}>
-                    <option value="">-- Select Distribution Cycle --</option>
+                    {cycles.length === 0 ? (
+                      <option value="" disabled>-- No Distribution Cycles Created Yet --</option>
+                    ) : (
+                      <option value="">-- Select Distribution Cycle --</option>
+                    )}
                     {cycles.map(c => {
                       const status = getCycleStatus(c)
                       return (
@@ -526,6 +550,31 @@ export default function AdminDistribution() {
                       )
                     })}
                   </select>
+
+                  {cycles.length === 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs space-y-2">
+                      <div className="font-semibold text-amber-900 flex items-center gap-1.5">
+                        <i className="fas fa-triangle-exclamation text-amber-600" />
+                        No distribution cycles created yet.
+                      </div>
+                      <p className="text-amber-800 leading-relaxed">
+                        To fulfill scheduled cycle relief, create a cycle in <strong>Settings &gt; Distribution Cycles</strong>. Or switch to <strong>Special Assistance</strong> mode below to distribute directly to any household.
+                      </p>
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSpecial(true)
+                            initPackageForCycle('', true)
+                          }}
+                          className="btn btn-warning btn-xs"
+                        >
+                          <i className="fas fa-hand-holding-heart mr-1" />
+                          Switch to Special Assistance Mode
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -567,11 +616,11 @@ export default function AdminDistribution() {
               </div>
 
               {/* Purok Filter Tabs in Modal */}
-              <div>
+              <div className="space-y-1">
                 <div className="text-[10px] font-bold text-slate-400 uppercase mb-1">Filter by Purok</div>
-                <div className="tab-scroll">
+                <div className="tab-scroll w-full py-0.5">
                   <div className={`purok-tab ${!modalPurokFilter ? 'active' : ''}`} onClick={() => setModalPurokFilter('')}>All</div>
-                  {puroks.map(p => (
+                  {puroks.filter(p => !p.is_archived).map(p => (
                     <div key={p.id} className={`purok-tab ${modalPurokFilter === String(p.id) ? 'active' : ''}`}
                       onClick={() => setModalPurokFilter(String(p.id))}>{p.name}</div>
                   ))}
@@ -589,31 +638,55 @@ export default function AdminDistribution() {
               )}
 
               {/* Package Preview */}
-              <div className="form-group">
+              <div className="form-group space-y-2">
                 <div className="flex items-center justify-between mb-1">
                   <label className="form-label mb-0">Relief Goods Package *</label>
-                  <span className="text-[11px] text-blue-600 font-semibold">
-                    {pkgItems.length} items configured
-                  </span>
-                </div>
-                <div className="space-y-1.5 max-h-44 overflow-y-auto">
-                  {pkgItems.map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2 text-xs">
-                      <span className="flex-1 font-semibold text-navy truncate">{item.item_name}</span>
-                      <input type="number" min="0" step="0.5"
-                        className="w-16 form-input text-xs text-center py-1"
-                        value={item.quantity}
-                        onChange={e => setPkgItems(p => p.map((it, idx) => idx === i ? { ...it, quantity: e.target.value } : it))} />
-                      <span className="text-xs text-slate-400 w-10">{item.unit}</span>
-                      <button onClick={() => setPkgItems(p => p.filter((_, idx) => idx !== i))}
-                        className="text-red-400 hover:text-red-600">
-                        <i className="fas fa-trash text-xs" />
-                      </button>
-                    </div>
-                  ))}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={loadDefaultPackage}
+                      className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 underline cursor-pointer"
+                      title="Load standard package items for this sector"
+                    >
+                      <i className="fas fa-rotate text-[10px]" /> Load Standard Package
+                    </button>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      ({pkgItems.length} items configured)
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-2">
+                {pkgItems.length === 0 ? (
+                  <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs text-slate-400 space-y-1.5">
+                    <div>No items added to this package yet.</div>
+                    <button
+                      type="button"
+                      onClick={loadDefaultPackage}
+                      className="btn btn-outline btn-xs mx-auto"
+                    >
+                      <i className="fas fa-box-open mr-1" /> Load Default Relief Package Items
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                    {pkgItems.map((item, i) => (
+                      <div key={i} className="flex items-center gap-2 bg-slate-50 rounded-xl p-2 text-xs">
+                        <span className="flex-1 font-semibold text-navy truncate">{item.item_name}</span>
+                        <input type="number" min="0" step="0.5"
+                          className="w-16 form-input text-xs text-center py-1"
+                          value={item.quantity}
+                          onChange={e => setPkgItems(p => p.map((it, idx) => idx === i ? { ...it, quantity: e.target.value } : it))} />
+                        <span className="text-xs text-slate-400 w-10">{item.unit}</span>
+                        <button onClick={() => setPkgItems(p => p.filter((_, idx) => idx !== i))}
+                          className="text-red-400 hover:text-red-600">
+                          <i className="fas fa-trash text-xs" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-2 space-y-1.5">
                   <select
                     className="form-input text-xs w-full bg-blue-50/50 border-blue-200 text-blue-800 font-medium"
                     value={newItemId}
@@ -632,13 +705,30 @@ export default function AdminDistribution() {
                       setNewItemId('');
                     }}
                   >
-                    <option value="">+ Add Item from Inventory...</option>
+                    {inventory.length === 0 ? (
+                      <option value="" disabled>-- No inventory items in stock (0 items) --</option>
+                    ) : (
+                      <option value="">+ Add Item from Inventory...</option>
+                    )}
                     {inventory.map(inv => (
                       <option key={inv.id} value={inv.id}>
                         {inv.name} ({inv.quantity} {inv.unit} in stock)
                       </option>
                     ))}
                   </select>
+
+                  {inventory.length === 0 && (
+                    <div className="text-[11px] text-slate-500 flex items-center justify-between gap-1 px-1 flex-wrap">
+                      <span>Warehouse stock list is empty.</span>
+                      <button
+                        type="button"
+                        onClick={loadDefaultPackage}
+                        className="text-blue-600 font-semibold hover:underline cursor-pointer"
+                      >
+                        Load standard package template
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
 

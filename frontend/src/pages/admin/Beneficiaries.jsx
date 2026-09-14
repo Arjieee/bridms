@@ -245,7 +245,7 @@ export default function AdminBeneficiaries() {
           <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Purok</div>
           <div className="tab-scroll">
             <div className={`purok-tab ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
-            {puroks.map(p => (
+            {(puroks || []).filter(p => !p.is_archived).map(p => (
               <div key={p.id} className={`purok-tab ${purokFilter === String(p.id) ? 'active' : ''}`}
                 onClick={() => setPurok(String(p.id))}>{p.name}</div>
             ))}

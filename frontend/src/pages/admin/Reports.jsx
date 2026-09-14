@@ -216,27 +216,33 @@ export default function AdminReports() {
       </div>
 
       {/* Date Range Filter Controls */}
-      <div className="card p-3.5 mb-4 no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200">
+      <div className="card p-3 sm:p-3.5 mb-4 no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200">
         <div className="text-xs font-bold text-navy flex items-center gap-1.5">
           <i className="fas fa-calendar-alt text-blue-600" /> Filter Cycle Date Range
         </div>
-        <div className="flex items-center gap-2 flex-wrap text-xs">
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => { setStartDate(e.target.value); setCycleIdx(0) }}
-            className="form-input !py-1 !px-2.5 text-xs !w-auto bg-white border-slate-200 rounded-lg"
-          />
-          <span className="text-slate-400 font-medium">to</span>
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => { setEndDate(e.target.value); setCycleIdx(0) }}
-            className="form-input !py-1 !px-2.5 text-xs !w-auto bg-white border-slate-200 rounded-lg"
-          />
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap text-xs">
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[130px]">
+            <span className="text-[11px] text-slate-500 font-medium sm:hidden">From:</span>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => { setStartDate(e.target.value); setCycleIdx(0) }}
+              className="form-input !py-1.5 !px-2.5 text-xs w-full sm:!w-36 bg-white border-slate-200 rounded-lg min-w-[120px]"
+            />
+          </div>
+          <span className="text-slate-400 font-medium hidden sm:inline">to</span>
+          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[130px]">
+            <span className="text-[11px] text-slate-500 font-medium sm:hidden">To:</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => { setEndDate(e.target.value); setCycleIdx(0) }}
+              className="form-input !py-1.5 !px-2.5 text-xs w-full sm:!w-36 bg-white border-slate-200 rounded-lg min-w-[120px]"
+            />
+          </div>
           {(startDate || endDate) && (
             <button onClick={() => { setStartDate(''); setEndDate(''); setCycleIdx(0) }}
-              className="text-xs text-red-600 hover:text-red-800 font-semibold ml-1">
+              className="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0">
               Reset
             </button>
           )}

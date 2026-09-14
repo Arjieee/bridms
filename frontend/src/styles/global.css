@@ -171,7 +171,10 @@
     @apply flex gap-3 justify-end px-5 py-4 border-t border-slate-100 sticky bottom-0 bg-white;
   }
   @media(max-width:639px) {
-    .modal-footer { @apply flex-col-reverse; }
+    .modal-footer {
+      @apply flex-col-reverse;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
     .modal-footer .btn { @apply w-full justify-center; }
   }
 

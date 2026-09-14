@@ -318,19 +318,19 @@ export default function AdminDashboard() {
               )}
 
               {chartMode === 'custom' && (
-                <div className="flex items-center gap-1 bg-slate-50 px-2 py-0 rounded-lg border border-slate-200 h-8">
+                <div className="flex items-center gap-1 bg-slate-50 px-2 py-0 rounded-lg border border-slate-200 min-h-8">
                   <input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 !w-auto bg-transparent border-0 focus:ring-0 cursor-pointer"
+                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 min-w-[115px] sm:!w-auto bg-transparent border-0 focus:ring-0 cursor-pointer"
                   />
                   <span className="text-xs font-medium text-slate-400">to</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 !w-auto bg-transparent border-0 focus:ring-0 cursor-pointer"
+                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 min-w-[115px] sm:!w-auto bg-transparent border-0 focus:ring-0 cursor-pointer"
                   />
                 </div>
               )}

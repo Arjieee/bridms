@@ -355,7 +355,7 @@ export default function AdminQRVerification() {
 
             <div className="tab-scroll">
               <div className={`purok-tab ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
-              {puroks.map(p => (
+              {(puroks || []).filter(p => !p.is_archived).map(p => (
                 <div key={p.id} className={`purok-tab ${purokFilter === String(p.id) ? 'active' : ''}`}
                   onClick={() => setPurok(String(p.id))}>{p.name}</div>
               ))}

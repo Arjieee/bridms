@@ -35,7 +35,7 @@ export default function BeneficiaryCommunity() {
 
           <div className="tab-scroll mb-4">
             <div className={`purok-tab cursor-pointer hover:bg-slate-200 transition-colors ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
-            {puroks.map(p => (
+            {(puroks || []).filter(p => !p.is_archived).map(p => (
               <div key={p.id} className={`purok-tab cursor-pointer hover:bg-slate-200 transition-colors ${purokFilter === String(p.id) ? 'active' : ''}`}
                 onClick={() => setPurok(String(p.id))}>{p.name}</div>
             ))}
