@@ -17,14 +17,16 @@ const NAV = [
   { path: '/staff/beneficiaries', icon: 'fa-users',         label: 'Beneficiaries' },
   { path: '/staff/qr',            icon: 'fa-qrcode',        label: 'QR Verification' },
   { path: '/staff/distribution',  icon: 'fa-truck',         label: 'Distribution',  section: 'Operations' },
+  { path: '/staff/suppliers',     icon: 'fa-handshake',     label: 'Suppliers' },
+  { path: '/staff/reports',       icon: 'fa-file-lines',    label: 'Reports' },
 ]
 
 const BOTTOM_NAV = [
   { path: '/staff',              icon: 'fa-chart-pie',     label: 'Home' },
-  { path: '/staff/inventory',    icon: 'fa-boxes-stacked', label: 'Stock' },
-  { path: '/staff/beneficiaries',icon: 'fa-users',         label: 'Benefs' },
-  { path: '/staff/qr',           icon: 'fa-qrcode',        label: 'QR' },
-  { path: '/staff/distribution', icon: 'fa-truck',         label: 'Dist.' },
+  { path: '/staff/inventory',    icon: 'fa-boxes-stacked', label: 'Inventory' },
+  { path: '/staff/qr',           icon: 'fa-qrcode',        label: 'QR Scan' },
+  { path: '/staff/distribution', icon: 'fa-truck',         label: 'Distribute' },
+  { path: '/staff/reports',      icon: 'fa-file-lines',    label: 'Reports' },
 ]
 
 export default function StaffLayout() {

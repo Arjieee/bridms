@@ -21,10 +21,11 @@ export function useRedDots() {
     const pendingRegs = pendingRegistrations?.filter(r => r.status === 'pending').length || 0
     if (pendingRegs > 0) dots['/admin/settings'] = pendingRegs
 
-    // Pending member additions awaiting admin confirmation → Admin Beneficiaries
+    // Pending member additions awaiting confirmation → Beneficiaries
     const pendingAdditions = (pendingMemberAdditions || []).filter(r => r.status === 'pending').length || 0
-    if (pendingAdditions > 0 && user.role === 'admin') {
-      dots['/admin/beneficiaries'] = pendingAdditions
+    if (pendingAdditions > 0) {
+      if (user.role === 'admin') dots['/admin/beneficiaries'] = pendingAdditions
+      if (user.role === 'staff') dots['/staff/beneficiaries'] = pendingAdditions
     }
 
     // Pending donated items waiting to be added to inventory → Inventory red dot

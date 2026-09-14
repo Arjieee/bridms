@@ -338,6 +338,19 @@ export const useAppStore = create((set, get) => ({
         }
       },
 
+      deleteInventoryItem: async (itemId) => {
+        try {
+          const res = await apiFetch(`/inventory/${itemId}`, { method: 'DELETE' });
+          if (res.ok) {
+            await get().fetchInitialData();
+            return { ok: true, message: res.message || 'Item deleted successfully.' };
+          }
+          return { ok: false, message: res.message || 'Failed to delete item.' };
+        } catch (err) {
+          return { ok: false, message: err.message };
+        }
+      },
+
       adjustStock: async (itemId, qty, type, remarks) => {
         try {
           const endpoint = type === 'in' ? `/inventory/${itemId}/stock-in` : `/inventory/${itemId}/stock-out`;

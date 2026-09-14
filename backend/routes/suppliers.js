@@ -13,8 +13,8 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', getAllSuppliers);
-router.post('/', requireRoles('admin'), addSupplier);
-router.put('/:id/items/:itemIndex/fulfill', requireRoles('admin'), fulfillSupplierItem);
-router.delete('/:id', requireRoles('admin'), deleteSupplier);
+router.post('/', requireRoles('admin', 'staff'), addSupplier);
+router.put('/:id/items/:itemIndex/fulfill', requireRoles('admin', 'staff'), fulfillSupplierItem);
+router.delete('/:id', requireRoles('admin', 'staff'), deleteSupplier);
 
 export default router;

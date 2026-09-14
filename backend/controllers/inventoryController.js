@@ -143,6 +143,16 @@ export const deleteItem = async (req, res) => {
       where: { id },
     });
 
+    if (req.user) {
+      await addActivityLog({
+        account_id: req.user.id,
+        username: req.user.username,
+        role: req.user.role,
+        action: 'deleted_inventory_item',
+        details: `Deleted ${item.name} (${item.quantity} ${item.unit})`,
+      });
+    }
+
     return res.json({ ok: true, message: 'Item deleted successfully.' });
   } catch (err) {
     console.error('Error deleting inventory item:', err);

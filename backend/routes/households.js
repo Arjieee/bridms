@@ -25,15 +25,15 @@ router.post('/', registerHousehold);
 router.use(requireAuth);
 
 router.get('/', getApprovedHouseholds);
-router.get('/pending', requireRoles('admin'), getPendingRegistrations);
+router.get('/pending', requireRoles('admin', 'staff'), getPendingRegistrations);
 router.get('/:id', getHouseholdById);
-router.put('/:id', requireRoles('admin'), updateHousehold);
-router.post('/:id/approve', requireRoles('admin'), approveRegistration);
-router.post('/:id/reject', requireRoles('admin'), rejectRegistration);
+router.put('/:id', requireRoles('admin', 'staff'), updateHousehold);
+router.post('/:id/approve', requireRoles('admin', 'staff'), approveRegistration);
+router.post('/:id/reject', requireRoles('admin', 'staff'), rejectRegistration);
 
 // Member endpoints under /api/households/:id/members
 router.post('/:id/members', addMember);
 router.put('/:id/members/:mid', updateMember);
-router.delete('/:id/members/:mid', requireRoles('admin'), removeMember);
+router.delete('/:id/members/:mid', requireRoles('admin', 'staff'), removeMember);
 
 export default router;

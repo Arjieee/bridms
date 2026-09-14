@@ -46,7 +46,16 @@ export default function NotifBell({ accentColor = '#1a56db' }) {
   const handleClick = (n) => {
     if (!n.is_read) markNotifRead(n.id)
     if (n.link) {
-      navigate(n.link)
+      let targetLink = n.link
+      if (user?.role === 'staff' && targetLink.startsWith('/admin/')) {
+        // Direct operational routes to staff prefix
+        if (targetLink === '/admin/settings') {
+          targetLink = '/staff'
+        } else {
+          targetLink = targetLink.replace(/^\/admin\//, '/staff/')
+        }
+      }
+      navigate(targetLink)
       setOpen(false)
     }
   }

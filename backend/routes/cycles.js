@@ -13,8 +13,8 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', getAllCycles);
-router.post('/', requireRoles('admin'), createCycle);
-router.put('/:id/activate', requireRoles('admin'), activateCycle);
-router.put('/:id/deactivate', requireRoles('admin'), deactivateCycle);
+router.post('/', requireRoles('admin', 'staff'), createCycle);
+router.put('/:id/activate', requireRoles('admin', 'staff'), activateCycle);
+router.put('/:id/deactivate', requireRoles('admin', 'staff'), deactivateCycle);
 
 export default router;

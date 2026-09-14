@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
+import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
 
 export default function AdminQRVerification() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const { scanQR, claimQR, cycles, puroks, qrCodes, households } = useAppStore()
   const [scanning, setScanning] = useState(false)
   const [claiming, setClaiming] = useState(false)
@@ -296,7 +298,7 @@ export default function AdminQRVerification() {
                       {/* Direct Action to Record Distribution Manually */}
                       <div className="pt-2 border-t border-slate-100 flex gap-2">
                         <button
-                          onClick={() => navigate('/admin/distribution', { state: { prefillHhCode: result.household.hh_code } })}
+                          onClick={() => navigate(user?.role === 'staff' ? '/staff/distribution' : '/admin/distribution', { state: { prefillHhCode: result.household.hh_code } })}
                           className="btn btn-primary btn-sm flex-1 justify-center shadow-xs"
                         >
                           <i className="fas fa-pen-to-square mr-1.5" />

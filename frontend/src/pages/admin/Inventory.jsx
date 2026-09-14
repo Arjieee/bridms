@@ -87,9 +87,11 @@ function StockModal({ item, mode, onClose, pendingTasks = [] }) {
 }
 
 export default function AdminInventory() {
-  const { inventory, categories, suppliers, addInventoryItem, addCategory, fulfillDonationTask } = useAppStore()
+  const { inventory, categories, suppliers, addInventoryItem, deleteInventoryItem, addCategory, fulfillDonationTask } = useAppStore()
   const [selectedCat, setSelectedCat] = useState(null)
   const [stockTarget, setStockTarget] = useState(null)
+  const [itemToDelete, setItemToDelete] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [showAddItem, setShowAddItem] = useState(false)
   const [showAddCat, setShowAddCat] = useState(false)
   const [selectedTask, setSelectedTask] = useState(null)
@@ -312,12 +314,19 @@ export default function AdminInventory() {
                             : <span className="badge badge-sufficient">OK</span>}
                       </td>
                       <td data-label="Actions" className="text-right pr-5 py-3.5">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => setStockTarget({ item, mode: 'in' })} className="btn btn-success btn-xs px-3">
+                        <div className="flex justify-end gap-1.5">
+                          <button onClick={() => setStockTarget({ item, mode: 'in' })} className="btn btn-success btn-xs px-2.5" title="Add Stock (In)">
                             <i className="fas fa-plus mr-1" /> In
                           </button>
-                          <button onClick={() => setStockTarget({ item, mode: 'out' })} className="btn btn-warning btn-xs px-3">
+                          <button onClick={() => setStockTarget({ item, mode: 'out' })} className="btn btn-warning btn-xs px-2.5" title="Deduct Stock (Out)">
                             <i className="fas fa-minus mr-1" /> Out
+                          </button>
+                          <button
+                            onClick={() => setItemToDelete(item)}
+                            className="btn btn-outline text-red-500 hover:bg-red-50 hover:border-red-300 btn-xs px-2.5"
+                            title={`Delete ${item.name}`}
+                          >
+                            <i className="fas fa-trash-can text-xs" />
                           </button>
                         </div>
                       </td>
@@ -332,6 +341,48 @@ export default function AdminInventory() {
 
       {stockTarget && (
         <StockModal item={stockTarget.item} mode={stockTarget.mode} pendingTasks={pendingTasks} onClose={() => setStockTarget(null)} />
+      )}
+
+      {itemToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !isDeleting && setItemToDelete(null)}>
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+            className="card p-6 w-full max-w-sm bg-white rounded-2xl shadow-xl text-center">
+            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
+              <i className="fas fa-trash-can" />
+            </div>
+            <h3 className="font-display font-bold text-lg text-navy mb-1">Delete Item?</h3>
+            <p className="text-xs text-slate-500 mb-5">
+              Are you sure you want to remove <strong className="text-navy">{itemToDelete.name}</strong> ({itemToDelete.quantity} {itemToDelete.unit}) from inventory? This action cannot be undone.
+            </p>
+            <div className="flex gap-2 justify-center">
+              <button
+                disabled={isDeleting}
+                onClick={() => setItemToDelete(null)}
+                className="btn btn-gray btn-sm px-4"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={async () => {
+                  setIsDeleting(true)
+                  const res = await deleteInventoryItem(itemToDelete.id)
+                  setIsDeleting(false)
+                  if (res.ok) {
+                    toast.success(`"${itemToDelete.name}" removed from inventory.`)
+                  } else {
+                    toast.error(res.message || 'Failed to delete item.')
+                  }
+                  setItemToDelete(null)
+                }}
+                className="btn btn-danger btn-sm px-4 flex items-center gap-1.5"
+              >
+                {isDeleting ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-trash-can" />}
+                Delete Item
+              </button>
+            </div>
+          </motion.div>
+        </div>
       )}
 
       {showAddItem && (

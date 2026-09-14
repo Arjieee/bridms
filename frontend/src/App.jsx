@@ -185,6 +185,8 @@ export default function App() {
           <Route path="beneficiaries" element={<AdminBeneficiaries />} />
           <Route path="qr" element={<AdminQR />} />
           <Route path="distribution" element={<AdminDist />} />
+          <Route path="suppliers" element={<AdminSuppliers />} />
+          <Route path="reports" element={<AdminReports />} />
         </Route>
 
         <Route

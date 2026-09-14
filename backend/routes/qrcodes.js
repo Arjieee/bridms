@@ -14,7 +14,7 @@ router.use(requireAuth);
 
 router.get('/', getAllQRCodes);
 router.get('/:token', verifyQRToken);
-router.post('/generate', requireRoles('admin'), generateQRCodesForCycle);
+router.post('/generate', requireRoles('admin', 'staff'), generateQRCodesForCycle);
 router.put('/:id/claim', requireRoles('admin', 'staff'), claimQRCode);
 
 export default router;
