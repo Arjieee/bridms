@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import jsQR from 'jsqr'
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import toast from 'react-hot-toast'
@@ -17,7 +18,11 @@ export default function AdminQRVerification() {
   const [claimFilter, setClaimFilter] = useState('all') // 'all' | 'unclaimed' | 'claimed'
   const [selectedCycleId, setSelectedCycleId] = useState(null)
   const [isInitializingCam, setIsInitializingCam] = useState(false)
-  const html5Ref = useRef(null)
+
+  const videoRef = useRef(null)
+  const canvasRef = useRef(null)
+  const streamRef = useRef(null)
+  const animFrameRef = useRef(null)
   const resultRef = useRef(null)
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export default function AdminQRVerification() {
   });
   const activeCycle = activeCycles.find(c => String(c.id) === String(selectedCycleId)) || activeCycles[0]
 
-  const eligibles = qrCodes
+  const eligibles = (qrCodes || [])
     .filter(q => String(q.cycle_id) === String(activeCycle?.id))
     .map(q => {
       const hh = households.find(h => h.id === q.household_id)
@@ -62,90 +67,31 @@ export default function AdminQRVerification() {
     return true
   })
 
-  const stopScan = async () => {
-    try {
-      if (html5Ref.current) {
-        if (html5Ref.current.isScanning) {
-          await html5Ref.current.stop()
-        }
-        await html5Ref.current.clear()
-        html5Ref.current = null
+  const stopScan = useCallback(() => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current)
+      animFrameRef.current = null
+    }
+    if (streamRef.current) {
+      try {
+        streamRef.current.getTracks().forEach((track) => track.stop())
+      } catch (e) {
+        console.warn('Error stopping stream tracks:', e)
       }
-    } catch (e) {
-      console.warn('Scanner stop error:', e)
+      streamRef.current = null
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
     }
     setScanning(false)
     setIsInitializingCam(false)
-  }
+  }, [])
 
-  useEffect(() => () => { stopScan() }, [])
-
-  const startScan = async () => {
-    setResult(null)
-    setIsInitializingCam(true)
-    setScanning(true)
-
-    try {
-      const { Html5Qrcode } = await import('html5-qrcode')
-
-      if (html5Ref.current) {
-        try {
-          if (html5Ref.current.isScanning) await html5Ref.current.stop()
-          await html5Ref.current.clear()
-        } catch {}
-        html5Ref.current = null
-      }
-
-      await new Promise(r => setTimeout(r, 120))
-
-      const html5QrCode = new Html5Qrcode('qr-reader-v2')
-      html5Ref.current = html5QrCode
-
-      let devices = []
-      try {
-        devices = await Html5Qrcode.getCameras()
-      } catch (enumErr) {
-        console.warn('Could not enumerate cameras:', enumErr)
-      }
-
-      let cameraConfig = null
-      if (devices && devices.length > 0) {
-        const rearCam = devices.find(d => /back|rear|environment/i.test(d.label))
-        cameraConfig = rearCam ? rearCam.id : devices[0].id
-      } else {
-        cameraConfig = { facingMode: 'environment' }
-      }
-
-      const qrConfig = {
-        fps: 15,
-        qrbox: { width: 220, height: 220 },
-        aspectRatio: 1.0,
-      }
-
-      const onScanSuccess = (decoded) => {
-        stopScan()
-        handleScan(decoded)
-      }
-
-      try {
-        await html5QrCode.start(cameraConfig, qrConfig, onScanSuccess, () => {})
-        setIsInitializingCam(false)
-      } catch (startErr) {
-        console.warn('Camera start with primary config failed, trying fallback...', startErr)
-        if (devices.length > 0) {
-          await html5QrCode.start(devices[0].id, qrConfig, onScanSuccess, () => {})
-        } else {
-          await html5QrCode.start({ facingMode: 'user' }, qrConfig, onScanSuccess, () => {})
-        }
-        setIsInitializingCam(false)
-      }
-    } catch (err) {
-      console.error('Camera Scanner Error:', err)
-      toast.error('Unable to access camera. Please check camera permissions or use manual entry.')
-      setScanning(false)
-      setIsInitializingCam(false)
+  useEffect(() => {
+    return () => {
+      stopScan()
     }
-  }
+  }, [stopScan])
 
   const handleScan = async (token) => {
     let raw = (token || '').trim()
@@ -161,6 +107,86 @@ export default function AdminQRVerification() {
     else if (r.status === 'inactive') toast.error('This cycle is no longer active.')
     else if (r.status === 'insufficient_stock') toast.error('⚠️ Stock is insufficient for relief package.')
     else toast.error('QR code not registered in system.')
+  }
+
+  const scanFrame = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current) return
+    const video = videoRef.current
+    const canvas = canvasRef.current
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d', { willReadFrequently: true })
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: 'dontInvert',
+        })
+
+        if (code && code.data && code.data.trim()) {
+          stopScan()
+          handleScan(code.data.trim())
+          return
+        }
+      }
+    }
+
+    animFrameRef.current = requestAnimationFrame(scanFrame)
+  }, [stopScan])
+
+  const startScan = async () => {
+    setResult(null)
+    setIsInitializingCam(true)
+    setScanning(true)
+
+    try {
+      // Clean up previous stream if any
+      if (streamRef.current) {
+        try {
+          streamRef.current.getTracks().forEach((track) => track.stop())
+        } catch {}
+        streamRef.current = null
+      }
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current)
+        animFrameRef.current = null
+      }
+
+      let stream = null
+      // Try back camera first on mobile devices
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        })
+      } catch (err) {
+        console.warn('Back camera not available, falling back to standard video...', err)
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        })
+      }
+
+      streamRef.current = stream
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.setAttribute('playsinline', 'true')
+        await videoRef.current.play()
+        setIsInitializingCam(false)
+        animFrameRef.current = requestAnimationFrame(scanFrame)
+      }
+    } catch (err) {
+      console.error('Camera Scanner Error:', err)
+      toast.error('Unable to access camera. Please check camera permissions or use manual entry.')
+      stopScan()
+    }
   }
 
   const handleClaim = async () => {
@@ -221,11 +247,24 @@ export default function AdminQRVerification() {
         <div className="card p-4 space-y-4">
           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
             {/* Live Camera Viewport Container */}
-            <div className="relative overflow-hidden rounded-2xl bg-black min-h-[240px] flex items-center justify-center">
-              <div id="qr-reader-v2" className="w-full h-full min-h-[240px]" />
+            <div className="relative overflow-hidden rounded-2xl bg-slate-950 min-h-[260px] flex items-center justify-center border border-slate-800 shadow-inner">
+              {/* Native Live Video Stream */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full min-h-[260px] max-h-[340px] object-cover rounded-2xl ${
+                  scanning ? 'block' : 'hidden'
+                }`}
+              />
 
+              {/* Hidden Canvas for QR Analysis */}
+              <canvas ref={canvasRef} className="hidden" />
+
+              {/* Ready State Overlay when not scanning */}
               {!scanning && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-slate-900/90 text-slate-300">
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-slate-900 text-slate-300">
                   <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3 shadow-inner">
                     <i className="fas fa-qrcode text-2xl text-emerald-400" />
                   </div>
@@ -236,8 +275,25 @@ export default function AdminQRVerification() {
                 </div>
               )}
 
+              {/* Scanning Reticle & Laser Line Overlay while actively scanning */}
+              {scanning && !isInitializingCam && (
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                  <div className="relative w-52 h-52 sm:w-60 sm:h-60 border-2 border-emerald-400/80 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center overflow-hidden">
+                    {/* Corner Reticle Accents */}
+                    <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
+                    <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
+                    <div className="absolute bottom-0 left-0 w-4 h-4 border-b-4 border-l-4 border-emerald-400 rounded-bl-lg" />
+                    <div className="absolute bottom-0 right-0 w-4 h-4 border-b-4 border-r-4 border-emerald-400 rounded-br-lg" />
+
+                    {/* Animated Scanning Laser Line */}
+                    <div className="w-full h-0.5 bg-gradient-to-r from-transparent via-emerald-400 to-transparent animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]" />
+                  </div>
+                </div>
+              )}
+
+              {/* Camera Stream Initializing Spinner */}
               {isInitializingCam && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 text-white z-10">
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-white z-10">
                   <i className="fas fa-circle-notch fa-spin text-2xl text-emerald-400 mb-2" />
                   <span className="text-xs font-medium">Starting camera stream...</span>
                 </div>
@@ -508,3 +564,4 @@ export default function AdminQRVerification() {
     </div>
   )
 }
+
