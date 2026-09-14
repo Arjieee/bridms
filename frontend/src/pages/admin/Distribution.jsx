@@ -333,30 +333,42 @@ export default function AdminDistribution() {
       {selectedType && (
         <div className="card p-3 mb-4 space-y-3">
           {/* Header Row: Compact Active Cycle Info + Record Count + Month History Filter */}
-          <div className="flex items-center justify-between gap-2 flex-wrap border-b border-slate-100 pb-2.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold text-navy bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-flex items-center gap-1.5">
-                <i className="fas fa-boxes-packing text-blue-600 text-xs" />
-                Active Cycle: <strong className="text-navy">{activeCycle ? activeCycle.name : 'None'}</strong>
-                {activeCycle && (
-                  <span className="text-slate-500 font-normal ml-1">
-                    · {receivedHouseholdIds.size} claimed
-                  </span>
-                )}
-              </span>
-              <span className="text-xs text-slate-400 font-medium">
-                {records.length} {records.length === 1 ? 'record' : 'records'} found
-              </span>
+          <div className="space-y-2 border-b border-slate-100 pb-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="text-xs font-bold text-navy bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-flex items-center gap-1.5 truncate">
+                  <i className="fas fa-boxes-packing text-blue-600 text-xs" />
+                  Active Cycle: <strong className="text-navy">{activeCycle ? activeCycle.name : 'None'}</strong>
+                  {activeCycle && (
+                    <span className="text-slate-500 font-normal ml-1">
+                      · {receivedHouseholdIds.size} claimed
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+                  {records.length} {records.length === 1 ? 'record' : 'records'} found
+                </span>
+              </div>
+
+              {/* Export CSV Button */}
+              <button
+                onClick={handleExportCSV}
+                className="btn btn-gray btn-xs py-1 px-2.5 cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                title="Export Distribution Logs to CSV"
+              >
+                <i className="fas fa-file-csv text-emerald-600 text-xs" />
+                <span className="text-xs">Export CSV</span>
+              </button>
             </div>
 
-            {/* Right Side: Month Range / Month History Selector & Search */}
-            <div className="flex items-center gap-2 flex-wrap min-w-0">
+            {/* Filter & Search Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full">
               {/* Month History Filter */}
               <div className="relative">
                 <select
                   value={monthFilter}
                   onChange={e => setMonthFilter(e.target.value)}
-                  className="form-input text-xs py-1 px-2.5 bg-white font-medium border-slate-200 rounded-lg text-slate-700 cursor-pointer"
+                  className="form-input text-xs py-1.5 px-2.5 bg-white font-medium border-slate-200 rounded-lg text-slate-700 cursor-pointer w-full"
                 >
                   <option value="">
                     📅 All Month History {availableMonths.length === 0 ? '(0 logs)' : `(${distributions.length} logs)`}
@@ -379,19 +391,9 @@ export default function AdminDistribution() {
                   placeholder="Search record..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="form-input text-xs py-1 pl-7 pr-2.5 w-36 sm:w-44 border-slate-200 rounded-lg"
+                  className="form-input text-xs py-1.5 pl-7 pr-2.5 w-full border-slate-200 rounded-lg"
                 />
               </div>
-
-              {/* Export CSV Button */}
-              <button
-                onClick={handleExportCSV}
-                className="btn btn-gray btn-xs py-1 px-2.5 cursor-pointer flex items-center gap-1.5"
-                title="Export Distribution Logs to CSV"
-              >
-                <i className="fas fa-file-csv text-emerald-600 text-xs" />
-                <span className="hidden sm:inline">Export CSV</span>
-              </button>
             </div>
           </div>
 

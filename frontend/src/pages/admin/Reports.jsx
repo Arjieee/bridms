@@ -199,18 +199,22 @@ export default function AdminReports() {
         </div>
       </div>
 
-      <div className="section-header mb-5 no-print">
-        <div>
-          <div className="section-sub text-red-500 font-semibold">
-            <i className="fas fa-lock text-[10px] mr-1" />CONFIDENTIAL — For authorized personnel only
+      <div className="flex items-center justify-between mb-3 no-print gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-[11px] font-bold border border-red-200 max-w-full">
+            <i className="fas fa-lock text-[10px] flex-shrink-0" />
+            <span className="font-bold flex-shrink-0">CONFIDENTIAL</span>
+            <span className="hidden sm:inline text-red-500 font-normal truncate">— For authorized personnel only</span>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer" title="Export Current Cycle Summary to CSV">
-            <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span className="hidden sm:inline">Export CSV</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <button onClick={handleExportCSV} className="btn btn-gray btn-sm py-1.5 px-2.5 cursor-pointer flex items-center gap-1" title="Export Current Cycle Summary to CSV">
+            <i className="fas fa-file-csv text-emerald-600 text-sm" />
+            <span className="text-xs">Export CSV</span>
           </button>
-          <button onClick={() => window.print()} className="btn btn-outline btn-sm">
-            <i className="fas fa-print" /> <span className="hidden sm:inline">Print Report</span>
+          <button onClick={() => window.print()} className="btn btn-outline btn-sm py-1.5 px-2.5 flex items-center gap-1" title="Print Official Report">
+            <i className="fas fa-print text-sm" />
+            <span className="hidden sm:inline text-xs">Print</span>
           </button>
         </div>
       </div>

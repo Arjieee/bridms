@@ -262,33 +262,29 @@ export default function AdminBeneficiaries() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-1 border-t border-slate-100">
-          <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Member Status</div>
-            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl w-fit flex-wrap">
-              {[
-                { key: 'all', label: 'All Statuses', icon: 'fa-users' },
-                { key: 'active', label: 'Active', icon: 'fa-circle-check text-emerald-600' },
-                { key: 'inactive', label: 'Inactive', icon: 'fa-user-slash text-amber-600' },
-                { key: 'deceased', label: 'Deceased', icon: 'fa-ribbon text-slate-500' },
-              ].map(tab => (
-                <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    statusFilter === tab.key
-                      ? 'bg-white text-navy shadow-xs'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  <i className={`fas ${tab.icon} mr-1.5`} />
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+        <div>
+          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Member Status</div>
+          <div className="tab-scroll">
+            {[
+              { key: 'all', label: 'All Statuses', icon: 'fa-users' },
+              { key: 'active', label: 'Active', icon: 'fa-circle-check text-emerald-600' },
+              { key: 'inactive', label: 'Inactive', icon: 'fa-user-slash text-amber-600' },
+              { key: 'deceased', label: 'Deceased', icon: 'fa-ribbon text-slate-500' },
+            ].map(tab => (
+              <div
+                key={tab.key}
+                onClick={() => setStatusFilter(tab.key)}
+                className={`purok-tab flex items-center gap-1.5 ${statusFilter === tab.key ? 'active' : ''}`}
+              >
+                <i className={`fas ${tab.icon}`} />
+                <span>{tab.label}</span>
+              </div>
+            ))}
           </div>
+        </div>
 
-          <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer self-stretch sm:self-auto" title="Export Filtered Beneficiaries to CSV">
+        <div className="pt-2 border-t border-slate-100 flex justify-end">
+          <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer w-full sm:w-auto justify-center" title="Export Filtered Beneficiaries to CSV">
             <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span>Export Masterlist CSV ({filtered.length})</span>
           </button>
         </div>
