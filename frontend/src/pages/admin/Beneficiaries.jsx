@@ -242,7 +242,17 @@ export default function AdminBeneficiaries() {
 
       <div className="card p-4 mb-4 space-y-3">
         <div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Purok</div>
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filter by Purok</span>
+            <button
+              onClick={handleExportCSV}
+              className="btn btn-gray btn-xs flex items-center gap-1.5 cursor-pointer text-xs font-semibold py-1 px-2.5"
+              title="Export Filtered Beneficiaries to CSV"
+            >
+              <i className="fas fa-file-csv text-emerald-600 text-xs" />
+              <span>Export Masterlist CSV ({filtered.length})</span>
+            </button>
+          </div>
           <div className="tab-scroll">
             <div className={`purok-tab ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
             {(puroks || []).filter(p => !p.is_archived).map(p => (
@@ -281,12 +291,6 @@ export default function AdminBeneficiaries() {
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="pt-2 border-t border-slate-100 flex justify-end">
-          <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer w-full sm:w-auto justify-center" title="Export Filtered Beneficiaries to CSV">
-            <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span>Export Masterlist CSV ({filtered.length})</span>
-          </button>
         </div>
       </div>
 
