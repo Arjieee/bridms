@@ -1,7 +1,8 @@
 import { useAuthStore } from '../store/authStore';
 
 const RAW_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const BASE_URL = RAW_BASE_URL.replace(/\/+$/, '');
+const CLEAN_BASE = RAW_BASE_URL.replace(/\/+$/, '');
+const BASE_URL = CLEAN_BASE.endsWith('/api') ? CLEAN_BASE : `${CLEAN_BASE}/api`;
 
 export const apiFetch = async (endpoint, options = {}) => {
   const token = useAuthStore.getState().token;
