@@ -28,16 +28,6 @@ export function useRedDots() {
       if (user.role === 'staff') dots['/staff/beneficiaries'] = pendingAdditions
     }
 
-    // Pending donated items waiting to be added to inventory → Inventory red dot
-    const pendingDonations = (suppliers || []).reduce((acc, s) => {
-      const unfulfilled = (s.items || []).filter(i => !i.fulfilled).length
-      return acc + unfulfilled
-    }, 0)
-
-    if (pendingDonations > 0) {
-      dots['/admin/inventory'] = pendingDonations
-      dots['/staff/inventory'] = pendingDonations
-    }
 
     // Pending member status changes → Admin Beneficiaries (for admin) / Beneficiary Dashboard
     const pendingChanges = (pendingMemberStatusChanges || []).filter(r => r.status === 'pending')

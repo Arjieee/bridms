@@ -213,3 +213,35 @@ export const stockOut = async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Failed to stock out item.' });
   }
 };
+
+/**
+ * Fetch chronological stock ledger for an item (matching the whiteboard photo)
+ * Returns { date, description, qty, balance_after, recorded_by }
+ */
+export const getItemLedger = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+
+    const item = await prisma.inventoryItem.findUnique({
+      where: { id },
+    });
+    if (!item) {
+      return res.status(404).json({ ok: false, message: 'Inventory item not found.' });
+    }
+
+    const ledger = await prisma.stockLedger.findMany({
+      where: { item_id: id },
+      orderBy: { date: 'asc' },
+    });
+
+    return res.json({
+      ok: true,
+      item,
+      ledger,
+    });
+  } catch (err) {
+    console.error('Error fetching item ledger:', err);
+    return res.status(500).json({ ok: false, message: 'Failed to fetch item stock ledger.' });
+  }
+};
+

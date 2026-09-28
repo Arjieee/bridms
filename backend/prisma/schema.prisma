@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -307,3 +307,53 @@ model PendingMemberAddition {
   @@index([household_id])
   @@index([status])
 }
+
+model Donor {
+  id             String      @id
+  donor_code     String      @unique
+  name           String
+  donor_type     String      @default("organization") // "individual" | "organization" | "government" | "ngo" | "supplier"
+  contact_person String?
+  contact_number String?
+  email          String?
+  address        String?
+  donation_date  String?
+  receivings     Receiving[]
+  created_at     DateTime    @default(now())
+  created_by     String?
+
+  @@index([name])
+}
+
+model Receiving {
+  id           String   @id
+  receive_code String   @unique
+  donor_id     String
+  donor        Donor    @relation(fields: [donor_id], references: [id], onDelete: Cascade)
+  date         DateTime @default(now())
+  items        String   // JSON array string: [{ item_id, item_name, quantity, uom, remarks }]
+  total_items  Int      @default(1)
+  notes        String?
+  received_by  String?
+  created_at   DateTime @default(now())
+
+  @@index([donor_id])
+}
+
+model StockLedger {
+  id            String   @id
+  item_id       Int
+  item_name     String
+  date          DateTime @default(now())
+  type          String   // "in" | "out"
+  qty           Float
+  balance_after Float
+  description   String
+  reference_id  String?
+  recorded_by   String?
+  created_at    DateTime @default(now())
+
+  @@index([item_id])
+  @@index([date])
+}
+

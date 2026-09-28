@@ -116,11 +116,21 @@ export const recordDistribution = async (req, res) => {
       });
     }
 
-    // Deduct stock for distributed items
+    // Deduct stock for distributed items and record in StockLedger
     if (Array.isArray(data.items)) {
+      const recipientDesc = head ? `${head.fname} ${head.lname}` : (hh.purok_name || 'Household');
       for (const item of data.items) {
         if (item.item_id && item.quantity) {
-          await adjustStock(item.item_id, parseFloat(item.quantity), 'out', `Manual distribution: ${distCode}`);
+          await adjustStock(
+            item.item_id,
+            parseFloat(item.quantity),
+            'out',
+            `Distribution: ${hh.hh_code} - ${recipientDesc} (${cycle?.name || 'Relief'})`,
+            {
+              reference_id: distCode,
+              recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
+            }
+          );
         }
       }
     }

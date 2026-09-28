@@ -7,6 +7,21 @@ import {
   ageGroup,
   mkMember,
 } from '../services/dbHelper.js';
+import { sendBeneficiaryStatusEmail } from '../utils/email.js';
+
+const resolveBeneficiaryEmail = async (member, hh) => {
+  if (member?.email && member.email.includes('@')) return member.email;
+  if (hh?.account_id) {
+    const acc = await prisma.account.findUnique({
+      where: { id: hh.account_id },
+      select: { email: true },
+    });
+    if (acc?.email && acc.email.includes('@')) return acc.email;
+  }
+  const head = hh?.members?.find((m) => m.is_head);
+  if (head?.email && head.email.includes('@')) return head.email;
+  return null;
+};
 
 const formatMember = (m) => {
   if (!m) return null;
@@ -285,6 +300,19 @@ export const proposeStatusChange = async (req, res) => {
           status_updated_at: new Date().toISOString(),
         },
       });
+
+      // Send status email notification
+      const email = await resolveBeneficiaryEmail(member, hh);
+      if (email) {
+        sendBeneficiaryStatusEmail({
+          toEmail: email,
+          toName: `${member.fname} ${member.lname}`,
+          status: 'active',
+          remarks: remarks || 'Activated by Barangay Admin.',
+          hhCode: hh.hh_code,
+        }).catch((e) => console.error('Error sending status email:', e));
+      }
+
       return res.json({ ok: true, applied: true, message: 'Member status set to active.' });
     }
 
@@ -317,6 +345,18 @@ export const proposeStatusChange = async (req, res) => {
       });
     }
 
+    // Send email alert to beneficiary that status update was proposed
+    const email = await resolveBeneficiaryEmail(member, hh);
+    if (email) {
+      sendBeneficiaryStatusEmail({
+        toEmail: email,
+        toName: `${member.fname} ${member.lname}`,
+        status: newStatus,
+        remarks: remarks || `Status update proposed by Admin (${newStatus}).`,
+        hhCode: hh.hh_code,
+      }).catch((e) => console.error('Error sending status email:', e));
+    }
+
     return res.status(201).json({
       ok: true,
       applied: false,
@@ -342,6 +382,7 @@ export const confirmStatusChange = async (req, res) => {
 
     const hh = await prisma.household.findUnique({
       where: { id: reqObj.hh_id },
+      include: { members: true },
     });
     if (req.user.role === 'beneficiary' && hh?.account_id !== req.user.id) {
       return res.status(403).json({ ok: false, message: 'Forbidden: Cannot confirm for another household.' });
@@ -376,6 +417,18 @@ export const confirmStatusChange = async (req, res) => {
       });
     }
 
+    const targetMember = hh?.members?.find((m) => m.id === reqObj.member_id);
+    const email = await resolveBeneficiaryEmail(targetMember, hh);
+    if (email) {
+      sendBeneficiaryStatusEmail({
+        toEmail: email,
+        toName: reqObj.member_name,
+        status: reqObj.new_status,
+        remarks: reqObj.remarks || 'Status confirmed.',
+        hhCode: reqObj.hh_code,
+      }).catch((e) => console.error('Error sending status email:', e));
+    }
+
     return res.json({ ok: true, message: 'Status change confirmed.' });
   } catch (err) {
     console.error('Error confirming status change:', err);
@@ -397,6 +450,7 @@ export const disputeStatusChange = async (req, res) => {
 
     const hh = await prisma.household.findUnique({
       where: { id: reqObj.hh_id },
+      include: { members: true },
     });
     if (req.user.role === 'beneficiary' && hh?.account_id !== req.user.id) {
       return res.status(403).json({ ok: false, message: 'Forbidden: Cannot dispute for another household.' });
@@ -431,6 +485,18 @@ export const disputeStatusChange = async (req, res) => {
         message: `Beneficiary disputed ${reqObj.member_name}'s status change proposal. Member status has been instantly verified back to Active.${reason ? ` Reason: ${reason}` : ''}`,
         link: '/admin/beneficiaries',
       });
+    }
+
+    const targetMember = hh?.members?.find((m) => m.id === reqObj.member_id);
+    const email = await resolveBeneficiaryEmail(targetMember, hh);
+    if (email) {
+      sendBeneficiaryStatusEmail({
+        toEmail: email,
+        toName: reqObj.member_name,
+        status: 'active',
+        remarks: 'Status dispute resolved - instantly restored to Active.',
+        hhCode: reqObj.hh_code,
+      }).catch((e) => console.error('Error sending status email:', e));
     }
 
     return res.json({ ok: true, message: 'Status change disputed. Member has been instantly verified as active.' });

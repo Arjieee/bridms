@@ -6,6 +6,7 @@ import {
   deleteItem,
   stockIn,
   stockOut,
+  getItemLedger,
 } from '../controllers/inventoryController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRoles } from '../middleware/roles.js';
@@ -15,6 +16,7 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', getAllInventory);
+router.get('/:id/ledger', getItemLedger);
 router.post('/', requireRoles('admin', 'staff'), addItem);
 router.put('/:id', requireRoles('admin', 'staff'), updateItem);
 router.delete('/:id', requireRoles('admin', 'staff'), deleteItem);

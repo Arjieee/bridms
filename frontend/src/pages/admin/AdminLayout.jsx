@@ -12,14 +12,15 @@ import { PageSkeleton } from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
 
 const NAV = [
-  { path: '/admin',               icon: 'fa-chart-pie',     label: 'Dashboard',     section: 'Main' },
-  { path: '/admin/inventory',     icon: 'fa-boxes-stacked', label: 'Inventory' },
-  { path: '/admin/beneficiaries', icon: 'fa-users',         label: 'Beneficiaries' },
-  { path: '/admin/qr',            icon: 'fa-qrcode',        label: 'QR Verification' },
-  { path: '/admin/distribution',  icon: 'fa-truck',         label: 'Distribution',  section: 'Operations' },
-  { path: '/admin/suppliers',     icon: 'fa-handshake',     label: 'Suppliers' },
-  { path: '/admin/reports',       icon: 'fa-file-lines',    label: 'Reports' },
-  { path: '/admin/settings',      icon: 'fa-gear',          label: 'Settings',      section: 'System' },
+  { path: '/admin',               icon: 'fa-chart-pie',          label: 'Dashboard',     section: 'Main' },
+  { path: '/admin/inventory',     icon: 'fa-boxes-stacked',      label: 'Inventory' },
+  { path: '/admin/beneficiaries', icon: 'fa-users',              label: 'Beneficiaries' },
+  { path: '/admin/qr',            icon: 'fa-qrcode',             label: 'QR Verification' },
+  { path: '/admin/distribution',  icon: 'fa-truck',              label: 'Distribution',  section: 'Operations' },
+  { path: '/admin/receiving',     icon: 'fa-hand-holding-heart', label: 'Receiving Donors' },
+  { path: '/admin/suppliers',     icon: 'fa-handshake',          label: 'Suppliers' },
+  { path: '/admin/reports',       icon: 'fa-file-lines',         label: 'Reports' },
+  { path: '/admin/settings',      icon: 'fa-gear',               label: 'Settings',      section: 'System' },
 ]
 
 const BOTTOM_NAV = [

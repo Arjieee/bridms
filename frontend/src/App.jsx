@@ -24,6 +24,7 @@ import AdminDist from "./pages/admin/Distribution";
 import AdminSuppliers from "./pages/admin/Suppliers";
 import AdminReports from "./pages/admin/Reports";
 import AdminSettings from "./pages/admin/Settings";
+import ReceivingDonors from "./pages/admin/ReceivingDonors";
 
 import StaffLayout from "./pages/staff/StaffLayout";
 
@@ -171,6 +172,7 @@ export default function App() {
           <Route path="beneficiaries" element={<AdminBeneficiaries />} />
           <Route path="qr" element={<AdminQR />} />
           <Route path="distribution" element={<AdminDist />} />
+          <Route path="receiving" element={<ReceivingDonors />} />
           <Route path="suppliers" element={<AdminSuppliers />} />
           <Route path="reports" element={<AdminReports />} />
           <Route path="settings" element={<AdminSettings />} />
@@ -189,6 +191,7 @@ export default function App() {
           <Route path="beneficiaries" element={<AdminBeneficiaries />} />
           <Route path="qr" element={<AdminQR />} />
           <Route path="distribution" element={<AdminDist />} />
+          <Route path="receiving" element={<ReceivingDonors />} />
           <Route path="suppliers" element={<AdminSuppliers />} />
           <Route path="reports" element={<AdminReports />} />
         </Route>

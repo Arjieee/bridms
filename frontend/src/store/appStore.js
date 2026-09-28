@@ -83,6 +83,8 @@ export const useAppStore = create((set, get) => ({
   qrCodes: [],
   distributions: [],
   suppliers: [],
+  donors: [],
+  receivings: [],
   notifications: [],
   activityLogs: [],
   standardPackages: SEED_STANDARD_PACKAGES,
@@ -105,6 +107,8 @@ export const useAppStore = create((set, get) => ({
         qrRes,
         distRes,
         supRes,
+        donorRes,
+        recRes,
         notifRes,
         statusRes,
       ] = await Promise.all([
@@ -116,6 +120,8 @@ export const useAppStore = create((set, get) => ({
         apiFetch('/qrcodes').catch(() => ({ qrCodes: [] })),
         apiFetch('/distributions').catch(() => ({ distributions: [] })),
         apiFetch('/suppliers').catch(() => ({ suppliers: [] })),
+        apiFetch('/donors/donors').catch(() => ({ donors: [] })),
+        apiFetch('/receiving').catch(() => ({ receivings: [] })),
         apiFetch('/notifications/me').catch(() => ({ notifications: [] })),
         apiFetch('/status-changes').catch(() => ({ pendingMemberStatusChanges: [] })),
       ]);
@@ -130,6 +136,8 @@ export const useAppStore = create((set, get) => ({
         qrCodes: Array.isArray(qrRes.qrCodes) ? qrRes.qrCodes : [],
         distributions: Array.isArray(distRes.distributions) ? distRes.distributions : [],
         suppliers: Array.isArray(supRes.suppliers) ? supRes.suppliers : [],
+        donors: Array.isArray(donorRes.donors) ? donorRes.donors : [],
+        receivings: Array.isArray(recRes.receivings) ? recRes.receivings : [],
         notifications: Array.isArray(notifRes.notifications) ? notifRes.notifications : [],
         pendingMemberStatusChanges: Array.isArray(statusRes.pendingMemberStatusChanges) ? statusRes.pendingMemberStatusChanges : [],
       }));
@@ -364,6 +372,76 @@ export const useAppStore = create((set, get) => ({
         }
       },
 
+      // --- Donors & Item Receiving ---
+      searchDonors: async (query = '') => {
+        try {
+          const endpoint = query ? `/donors/donors?q=${encodeURIComponent(query)}` : '/donors/donors';
+          const res = await apiFetch(endpoint);
+          return res.ok && Array.isArray(res.donors) ? res.donors : [];
+        } catch (err) {
+          console.error('searchDonors error:', err);
+          return [];
+        }
+      },
+
+      createDonor: async (data) => {
+        try {
+          const res = await apiFetch('/donors/donors', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          if (res.ok) {
+            await get().fetchInitialData();
+            return { ok: true, donor: res.donor };
+          }
+          return { ok: false, message: res.message || 'Failed to create donor.' };
+        } catch (err) {
+          return { ok: false, message: err.message };
+        }
+      },
+
+      fetchReceivings: async () => {
+        try {
+          const res = await apiFetch('/receiving');
+          if (res.ok && Array.isArray(res.receivings)) {
+            set({ receivings: res.receivings });
+            return res.receivings;
+          }
+          return [];
+        } catch (err) {
+          console.error('fetchReceivings error:', err);
+          return [];
+        }
+      },
+
+      createReceiving: async (data) => {
+        try {
+          const res = await apiFetch('/receiving', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          if (res.ok) {
+            await get().fetchInitialData();
+            return { ok: true, message: res.message, receiving: res.receiving };
+          }
+          return { ok: false, message: res.message || 'Failed to record donation.' };
+        } catch (err) {
+          return { ok: false, message: err.message };
+        }
+      },
+
+      fetchItemLedger: async (itemId) => {
+        try {
+          const res = await apiFetch(`/inventory/${itemId}/ledger`);
+          if (res.ok) {
+            return { ok: true, item: res.item, ledger: res.ledger || [] };
+          }
+          return { ok: false, message: res.message, ledger: [] };
+        } catch (err) {
+          return { ok: false, message: err.message, ledger: [] };
+        }
+      },
+
       updateStandardPackage: (cycleType, items) =>
         set((s) => ({ standardPackages: { ...s.standardPackages, [cycleType]: items } })),
 
@@ -533,42 +611,18 @@ export const useAppStore = create((set, get) => ({
         try {
           const res = await apiFetch('/suppliers', {
             method: 'POST',
-            body: JSON.stringify({
-              ...data,
-              items: (data.items || []).map(i => ({ ...i, fulfilled: false }))
-            }),
+            body: JSON.stringify(data),
           });
           if (res.ok) {
             await get().fetchInitialData();
-            return { ok: true, supplier: res.supplier, message: res.message || 'Supplier added successfully.' };
+            return { ok: true, supplier: res.supplier, message: res.message || 'Donor added successfully.' };
           }
-          return { ok: false, message: res.message || 'Failed to add supplier.' };
+          return { ok: false, message: res.message || 'Failed to add donor.' };
         } catch (err) {
           return { ok: false, message: err.message };
         }
       },
 
-      fulfillDonationTask: async (supplierId, itemIndex, targetItemId, addQuantity) => {
-        try {
-          if (targetItemId && addQuantity > 0) {
-            await get().adjustStock(targetItemId, addQuantity, 'in', 'Donated item restocked into inventory');
-          }
-          await apiFetch(`/suppliers/${supplierId}/items/${itemIndex}/fulfill`, { method: 'PUT' }).catch(() => {});
-          set((s) => ({
-            suppliers: s.suppliers.map((sup) => {
-              if (sup.id !== supplierId) return sup;
-              const newItems = (sup.items || []).map((it, idx) =>
-                idx === itemIndex ? { ...it, fulfilled: true } : it
-              );
-              return { ...sup, items: newItems };
-            }),
-          }));
-          return { ok: true };
-        } catch (err) {
-          console.error(err);
-          return { ok: false, message: err.message };
-        }
-      },
 
       // --- Notifications ---
       markNotifRead: async (id) => {

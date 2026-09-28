@@ -237,19 +237,24 @@ export default function BeneficiaryDashboard() {
         {hh?.members?.some(m => m.status === 'inactive') && (
           <div className="card p-4 border-l-4 border-amber-500 bg-amber-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
             <div>
-              <div className="font-display font-bold text-sm text-amber-900">
-                <i className="fas fa-user-slash mr-2 text-amber-600" />
-                Member Inactive Status Notice
+              <div className="font-display font-bold text-sm text-amber-900 flex items-center gap-2">
+                <i className="fas fa-user-slash text-amber-600" />
+                <span>Member Inactive Status Notice</span>
+                <span className="badge badge-pending text-[10px]">Action Required</span>
               </div>
               <div className="text-xs text-amber-700 mt-1">
-                One or more household members are currently marked as inactive. Inactive members cannot receive QR passes for relief distributions. You can request account reactivation from the admin.
+                One or more household members are currently marked as inactive and cannot receive QR passes for relief distribution. You can request activation below.
+              </div>
+              <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5 font-medium">
+                <i className="fas fa-envelope text-blue-600 text-[10px]" />
+                <span>Status updates & activation notices will be sent directly to your registered email address.</span>
               </div>
             </div>
             <button
               onClick={handleRequestReactivation}
-              className="btn btn-warning btn-xs flex-shrink-0 self-start sm:self-center"
+              className="btn btn-warning btn-xs flex-shrink-0 self-start sm:self-center shadow-xs font-bold"
             >
-              <i className="fas fa-rotate-left mr-1" /> Request Reactivation
+              <i className="fas fa-paper-plane mr-1.5" /> Request Activation
             </button>
           </div>
         )}

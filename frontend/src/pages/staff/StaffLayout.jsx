@@ -12,13 +12,14 @@ import { PageSkeleton } from '../../components/ui/Skeleton'
 import toast from 'react-hot-toast'
 
 const NAV = [
-  { path: '/staff',               icon: 'fa-chart-pie',     label: 'Dashboard',     section: 'Main' },
-  { path: '/staff/inventory',     icon: 'fa-boxes-stacked', label: 'Inventory' },
-  { path: '/staff/beneficiaries', icon: 'fa-users',         label: 'Beneficiaries' },
-  { path: '/staff/qr',            icon: 'fa-qrcode',        label: 'QR Verification' },
-  { path: '/staff/distribution',  icon: 'fa-truck',         label: 'Distribution',  section: 'Operations' },
-  { path: '/staff/suppliers',     icon: 'fa-handshake',     label: 'Suppliers' },
-  { path: '/staff/reports',       icon: 'fa-file-lines',    label: 'Reports' },
+  { path: '/staff',               icon: 'fa-chart-pie',          label: 'Dashboard',     section: 'Main' },
+  { path: '/staff/inventory',     icon: 'fa-boxes-stacked',      label: 'Inventory' },
+  { path: '/staff/beneficiaries', icon: 'fa-users',              label: 'Beneficiaries' },
+  { path: '/staff/qr',            icon: 'fa-qrcode',             label: 'QR Verification' },
+  { path: '/staff/distribution',  icon: 'fa-truck',              label: 'Distribution',  section: 'Operations' },
+  { path: '/staff/receiving',     icon: 'fa-hand-holding-heart', label: 'Receiving Donors' },
+  { path: '/staff/suppliers',     icon: 'fa-handshake',          label: 'Suppliers' },
+  { path: '/staff/reports',       icon: 'fa-file-lines',         label: 'Reports' },
 ]
 
 const BOTTOM_NAV = [

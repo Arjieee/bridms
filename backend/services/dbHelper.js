@@ -93,7 +93,7 @@ export const notifyStaff = async (data) => {
   }
 };
 
-export const adjustStock = async (itemId, qty, type, remarks) => {
+export const adjustStock = async (itemId, qty, type, remarks, metadata = {}) => {
   try {
     const item = await prisma.inventoryItem.findUnique({
       where: { id: Number(itemId) },
@@ -106,6 +106,26 @@ export const adjustStock = async (itemId, qty, type, remarks) => {
       where: { id: Number(itemId) },
       data: { quantity: newQty },
     });
+
+    // Record transaction in StockLedger for the running balance ledger
+    try {
+      await prisma.stockLedger.create({
+        data: {
+          id: 'ledg-' + shortId() + Math.random().toString(36).substr(2, 3),
+          item_id: Number(itemId),
+          item_name: item.name,
+          date: new Date(),
+          type,
+          qty: type === 'in' ? qty : -qty,
+          balance_after: newQty,
+          description: remarks || (type === 'in' ? 'Stock In' : 'Stock Out'),
+          reference_id: metadata?.reference_id || null,
+          recorded_by: metadata?.recorded_by || null,
+        },
+      });
+    } catch (ledgerErr) {
+      console.error('Failed to create stock ledger entry:', ledgerErr);
+    }
 
     if (newQty <= updated.critical_threshold && newQty > 0) {
       await notifyAdmins({

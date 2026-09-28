@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { useAppStore } from '../../store/appStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
@@ -26,60 +27,158 @@ function Calc({ item }) {
   )
 }
 
-function StockModal({ item, mode, onClose, pendingTasks = [] }) {
-  const { adjustStock, fulfillDonationTask } = useAppStore()
-  const [qty, setQty] = useState('')
-  const [remarks, setRemarks] = useState('')
+function StockLedgerModal({ item, onClose }) {
+  const { fetchItemLedger } = useAppStore()
+  const [ledger, setLedger] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const handleSubmit = async () => {
-    const q = parseFloat(qty)
-    if (!q || q <= 0) { toast.error('Enter a valid quantity.'); return }
-    await adjustStock(item.id, q, mode, remarks || (mode === 'in' ? 'Stock in' : 'Stock out'))
-
-    if (mode === 'in' && pendingTasks.length > 0) {
-      const matched = pendingTasks.find(t => {
-        const tName = t.item_name.toLowerCase().trim()
-        const iName = item.name.toLowerCase().trim()
-        return tName === iName || tName.includes(iName) || iName.includes(tName)
-      })
-      if (matched) {
-        await fulfillDonationTask(matched.supplierId, matched.itemIndex, item.id, q)
+  useEffect(() => {
+    let isMounted = true
+    const load = async () => {
+      setLoading(true)
+      const res = await fetchItemLedger(item.id)
+      if (isMounted) {
+        setLedger(res.ledger || [])
+        setLoading(false)
       }
     }
+    load()
+    return () => { isMounted = false }
+  }, [item.id, fetchItemLedger])
 
-    toast.success(`Stock ${mode === 'in' ? 'added' : 'deducted'} successfully.`)
-    onClose()
+  const handleExportLedgerCSV = () => {
+    const headers = [
+      { label: 'Date', key: 'date' },
+      { label: 'Description', key: 'description' },
+      { label: 'Type', key: 'type' },
+      { label: 'Quantity Changed', key: 'qty' },
+      { label: 'Running Balance', key: 'balance_after' },
+      { label: 'Recorded By', key: 'recorded_by' },
+    ]
+    const rows = ledger.map(l => ({
+      date: new Date(l.date).toLocaleDateString(),
+      description: l.description,
+      type: l.type?.toUpperCase(),
+      qty: (l.qty > 0 ? '+' : '') + l.qty,
+      balance_after: l.balance_after,
+      recorded_by: l.recorded_by || 'System',
+    }))
+    exportToCsv(`Ledger_${item.name.replace(/\s+/g, '_')}`, headers, rows)
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        className="card p-6 w-full max-w-md bg-white rounded-2xl shadow-xl">
-        <div className="font-display font-bold text-lg text-navy mb-1">
-          {mode === 'in' ? 'Add Stock' : 'Deduct Stock'} — {item.name}
-        </div>
-        <div className="text-xs text-slate-500 mb-4">
-          Current: <strong className="text-navy">{item.quantity} {item.unit}</strong>
-        </div>
-
-        <div className="space-y-3">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
+      onClick={e => e.target === e.currentTarget && onClose()}>
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        className="card p-6 w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col max-h-[85vh] overflow-hidden">
+        
+        {/* Ledger Header */}
+        <div className="flex items-start justify-between pb-4 border-b border-slate-100">
           <div>
-            <label className="form-label text-xs">Quantity to {mode === 'in' ? 'Add' : 'Deduct'}</label>
-            <input type="number" min="0.5" step="0.5" className="form-input"
-              placeholder={`Quantity in ${item.unit}...`} value={qty} onChange={e => setQty(e.target.value)} />
+            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
+              Stock Ledger &amp; Running Balance
+            </div>
+            <h2 className="font-display font-black text-2xl text-navy uppercase tracking-tight">
+              {item.name}
+            </h2>
+            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+              <span className="font-mono font-semibold text-slate-600">{item.item_code}</span>
+              <span>·</span>
+              <span>Unit: <strong className="text-navy">{item.unit}</strong></span>
+              <span>·</span>
+              <span className="badge badge-sufficient text-xs font-bold px-2 py-0.5">
+                Current Stock: {item.quantity} {item.unit}
+              </span>
+            </div>
           </div>
-          <div>
-            <label className="form-label text-xs">Remarks / Source</label>
-            <input className="form-input" value={remarks} onChange={e => setRemarks(e.target.value)}
-              placeholder={mode === 'in' ? 'e.g. Donation from LGU, Purchase' : 'e.g. Damaged, Expired'} />
-          </div>
-        </div>
-
-        <div className="flex gap-2 justify-end mt-5">
-          <button onClick={onClose} className="btn btn-gray">Cancel</button>
-          <button onClick={handleSubmit} className={`btn ${mode === 'in' ? 'btn-success' : 'btn-warning'}`}>
-            {mode === 'in' ? 'Add Stock' : 'Deduct Stock'}
+          <button onClick={onClose} className="w-8 h-8 rounded-lg text-slate-400 hover:text-navy hover:bg-slate-100 flex items-center justify-center">
+            <i className="fas fa-xmark text-sm" />
           </button>
+        </div>
+
+        {/* Ledger Table */}
+        <div className="flex-1 overflow-y-auto my-4 border border-slate-200/80 rounded-xl">
+          {loading ? (
+            <div className="py-16 text-center text-slate-400">
+              <i className="fas fa-spinner fa-spin text-2xl mb-2 text-blue-500 block" />
+              <div className="text-xs font-semibold">Loading ledger records...</div>
+            </div>
+          ) : ledger.length === 0 ? (
+            <div className="py-16 text-center text-slate-400">
+              <i className="fas fa-receipt text-3xl mb-2 text-slate-300 block" />
+              <div className="text-sm font-semibold text-slate-600">No stock movement entries yet</div>
+              <div className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                Stock intake is recorded via Receiving Donors, and deductions occur when relief goods are distributed.
+              </div>
+            </div>
+          ) : (
+            <table className="w-full text-xs text-left">
+              <thead className="bg-slate-50/90 text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase">
+                <tr>
+                  <th className="py-3 px-4 w-[22%]">Date</th>
+                  <th className="py-3 px-4 w-[43%]">Description</th>
+                  <th className="py-3 px-4 w-[17%] text-right">Qty</th>
+                  <th className="py-3 px-4 w-[18%] text-right">R. Bal</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {ledger.map((entry) => {
+                  const isPositive = entry.qty > 0
+                  const dateStr = new Date(entry.date).toLocaleDateString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    year: '2-digit',
+                  })
+                  return (
+                    <tr key={entry.id} className="hover:bg-blue-50/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-semibold text-slate-600 whitespace-nowrap">
+                        {dateStr}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-semibold text-navy leading-snug">
+                          {entry.description}
+                        </div>
+                        {entry.recorded_by && (
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            By: {entry.recorded_by}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <span className={`inline-block font-bold text-xs ${
+                          isPositive ? 'text-emerald-600 font-bold' : 'text-red-500 font-bold'
+                        }`}>
+                          {isPositive ? `+${entry.qty}` : entry.qty}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono font-extrabold text-navy whitespace-nowrap text-xs">
+                        <span className="bg-slate-100 px-2 py-0.5 rounded-md">
+                          {entry.balance_after}
+                        </span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+          <div className="text-[11px] text-slate-400">
+            {ledger.length} total movement transaction{ledger.length !== 1 ? 's' : ''}
+          </div>
+          <div className="flex gap-2">
+            {ledger.length > 0 && (
+              <button onClick={handleExportLedgerCSV} className="btn btn-outline btn-xs px-3">
+                <i className="fas fa-file-csv mr-1.5 text-blue-500" /> Export CSV
+              </button>
+            )}
+            <button onClick={onClose} className="btn btn-gray btn-xs px-4">
+              Close
+            </button>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -87,32 +186,12 @@ function StockModal({ item, mode, onClose, pendingTasks = [] }) {
 }
 
 export default function AdminInventory() {
-  const { inventory, categories, suppliers, addInventoryItem, deleteInventoryItem, addCategory, fulfillDonationTask } = useAppStore()
+  const { inventory, categories, addCategory } = useAppStore()
   const [selectedCat, setSelectedCat] = useState(null)
-  const [stockTarget, setStockTarget] = useState(null)
-  const [itemToDelete, setItemToDelete] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showAddItem, setShowAddItem] = useState(false)
+  const [viewingLedgerItem, setViewingLedgerItem] = useState(null)
   const [showAddCat, setShowAddCat] = useState(false)
-  const [selectedTask, setSelectedTask] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [newItem, setNewItem] = useState({ name: '', category_id: '', quantity: '', unit: '', low_threshold: 15, critical_threshold: 5 })
   const [newCat, setNewCat] = useState({ name: '', icon: 'fa-box', color: '#1a56db' })
-
-  // Collect unfulfilled donated items for modal & button badge
-  const pendingTasks = [];
-  (suppliers || []).forEach((sup) => {
-    (sup.items || []).forEach((item, idx) => {
-      if (!item.fulfilled) {
-        pendingTasks.push({
-          ...item,
-          supplierId: sup.id,
-          supplierName: sup.org_name,
-          itemIndex: idx,
-        })
-      }
-    })
-  })
 
   const rawItems = selectedCat ? inventory.filter(i => i.category_id === selectedCat.id) : inventory
   const items = rawItems.filter(item => {
@@ -123,54 +202,6 @@ export default function AdminInventory() {
     }
     return true
   })
-
-  const handleAutoFillTask = (task) => {
-    setSelectedTask(task)
-    // Auto-match category if possible
-    const matched = categories.find(c =>
-      c.name.toLowerCase().includes('food') || c.name.toLowerCase().includes('relief')
-    )
-    setNewItem({
-      name: task.item_name || '',
-      category_id: matched ? matched.id : (categories[0]?.id || 1),
-      quantity: task.quantity || '100',
-      unit: task.unit || 'Packs',
-      low_threshold: 20,
-      critical_threshold: 5,
-    })
-    toast.success(`Auto-filled "${task.item_name}". Set low & critical alerts below, then click Add Item.`)
-  }
-
-  const handleAddItem = async () => {
-    if (!newItem.name || !newItem.category_id || !newItem.unit) {
-      toast.error('Name, category, and unit are required.')
-      return
-    }
-    const res = await addInventoryItem(newItem)
-
-    // Fulfill linked donation task (either selectedTask or auto-matched by name)
-    let taskToFulfill = selectedTask
-    if (!taskToFulfill) {
-      const typedName = newItem.name.toLowerCase().trim()
-      taskToFulfill = pendingTasks.find(t => {
-        const tName = t.item_name.toLowerCase().trim()
-        return tName === typedName || typedName.includes(typedName) || typedName.includes(tName)
-      })
-    }
-
-    if (taskToFulfill) {
-      await fulfillDonationTask(taskToFulfill.supplierId, taskToFulfill.itemIndex, null, 0)
-      setSelectedTask(null)
-    }
-
-    if (res?.merged) {
-      toast.success(res.message || `Merged stock into existing item "${newItem.name}"!`)
-    } else {
-      toast.success(`"${newItem.name}" added to inventory!`)
-    }
-    setShowAddItem(false)
-    setNewItem({ name: '', category_id: '', quantity: '', unit: '', low_threshold: 15, critical_threshold: 5 })
-  }
 
   const handleAddCat = () => {
     if (!newCat.name) { toast.error('Category name required.'); return }
@@ -214,7 +245,10 @@ export default function AdminInventory() {
     <div>
       <div className="section-header mb-5">
         <div>
-          <div className="section-sub">{items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`}</div>
+          <h1 className="font-display font-extrabold text-2xl text-navy">Relief Goods Inventory</h1>
+          <div className="section-sub">
+            {items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`} · Stock is restocked via Receiving Donors
+          </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
           <div className="relative min-w-[160px] sm:min-w-[200px]">
@@ -224,7 +258,7 @@ export default function AdminInventory() {
               placeholder="Search inventory item..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="form-input text-xs pl-8 py-1.5 w-full rounded-xl bg-white border-slate-200"
+              className="form-input text-xs pl-8 py-2 w-full rounded-xl bg-white border-slate-200"
             />
           </div>
           <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer" title="Export Inventory to CSV">
@@ -233,18 +267,14 @@ export default function AdminInventory() {
           <button onClick={() => setShowAddCat(true)} className="btn btn-outline btn-sm">
             <i className="fas fa-plus" /> <span className="hidden sm:inline">Category</span>
           </button>
-          <button onClick={() => setShowAddItem(true)} className="btn btn-primary btn-sm flex items-center gap-1.5">
-            <i className="fas fa-plus" />
-            <span className="hidden sm:inline">Item</span>
-            {pendingTasks.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-400 text-navy font-extrabold text-[10px] shadow-sm">
-                {pendingTasks.length} Donated
-              </span>
-            )}
-          </button>
+          <Link to="/admin/receiving" className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm">
+            <i className="fas fa-hand-holding-heart" />
+            <span className="hidden sm:inline">Receive Goods</span>
+          </Link>
         </div>
       </div>
 
+      {/* Category Filter Pills */}
       <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
         <div className={`cat-card ${!selectedCat ? 'active' : ''}`} onClick={() => setSelectedCat(null)}>
           <i className="fas fa-border-all text-2xl mb-1" style={{ color: !selectedCat ? '#1a56db' : '#94a3b8' }} />
@@ -270,27 +300,33 @@ export default function AdminInventory() {
         })}
       </div>
 
+      {/* Inventory Table with Stock Ledger Modal Trigger */}
       <AnimatePresence mode="wait">
         <motion.div key={selectedCat?.id ?? 'all'}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           transition={{ duration: 0.15 }}
-          className="card mobile-card-table min-h-[400px] flex flex-col overflow-hidden">
+          className="card mobile-card-table min-h-[400px] flex flex-col overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
           {items.length === 0 ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-10 text-center text-slate-400">
+            <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-slate-400">
               <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
-              <div className="text-sm">No items in this category</div>
+              <div className="text-sm font-semibold text-slate-600">No items in this category</div>
+              <div className="text-xs text-slate-400 mt-1 max-w-xs">
+                To add relief goods to this category, record an incoming shipment in{' '}
+                <Link to="/admin/receiving" className="text-blue-600 underline font-semibold">
+                  Receiving Donors
+                </Link>.
+              </div>
             </div>
           ) : (
-            <table className="tbl w-full">
+            <table className="tbl w-full text-left">
               <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/80">
-                  <th className="w-[35%] text-left pl-5 py-3.5">Item</th>
-                  <th className="w-[25%] text-left py-3.5">Stock</th>
-                  <th className="w-[20%] text-left py-3.5">Status</th>
-                  <th className="w-[20%] text-right pr-5 py-3.5">Actions</th>
+                <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
+                  <th className="w-[50%] text-left pl-5 py-3.5">Item</th>
+                  <th className="w-[30%] text-left py-3.5">Stock in Hand</th>
+                  <th className="w-[20%] text-right pr-5 py-3.5">Status</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-slate-100 text-xs">
                 {items.map(item => {
                   const isCrit = item.quantity <= item.critical_threshold
                   const isLow = item.quantity <= item.low_threshold
@@ -299,36 +335,26 @@ export default function AdminInventory() {
                     ? `${item.quantity} ${cfg.base_unit} (≈${(item.quantity / cfg.conversions[0].factor).toFixed(1)} ${cfg.conversions[0].label})`
                     : `${item.quantity} ${item.unit}`
                   return (
-                    <tr key={item.id} className={`transition-colors hover:bg-slate-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}>
-                      <td data-label="Item" className="pl-5 py-3.5">
-                        <div className="font-semibold text-navy text-sm">{item.name}</div>
-                        <div className="text-[11px] text-slate-400">{item.item_code}</div>
+                    <tr
+                      key={item.id}
+                      onClick={() => setViewingLedgerItem(item)}
+                      className={`transition-colors cursor-pointer hover:bg-blue-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}
+                      title={`Click to view ${item.name} Stock Ledger history`}
+                    >
+                      <td data-label="Item" className="pl-5 py-4">
+                        <div className="font-semibold text-navy text-sm flex items-center gap-1.5">
+                          <span>{item.name}</span>
+                          <span className="text-[10px] text-slate-400 font-mono">({item.item_code})</span>
+                        </div>
                         <Calc item={item} />
                       </td>
-                      <td data-label="Stock" className="py-3.5">
+                      <td data-label="Stock" className="py-4">
                         <span className="font-bold text-navy text-sm">{display}</span>
                       </td>
-                      <td data-label="Status" className="py-3.5">
+                      <td data-label="Status" className="text-right pr-5 py-4">
                         {isCrit ? <span className="badge badge-critical">Critical</span>
                           : isLow ? <span className="badge badge-low">Low</span>
                             : <span className="badge badge-sufficient">OK</span>}
-                      </td>
-                      <td data-label="Actions" className="text-right pr-5 py-3.5">
-                        <div className="flex justify-end gap-1.5">
-                          <button onClick={() => setStockTarget({ item, mode: 'in' })} className="btn btn-success btn-xs px-2.5" title="Add Stock (In)">
-                            <i className="fas fa-plus mr-1" /> In
-                          </button>
-                          <button onClick={() => setStockTarget({ item, mode: 'out' })} className="btn btn-warning btn-xs px-2.5" title="Deduct Stock (Out)">
-                            <i className="fas fa-minus mr-1" /> Out
-                          </button>
-                          <button
-                            onClick={() => setItemToDelete(item)}
-                            className="btn btn-outline text-red-500 hover:bg-red-50 hover:border-red-300 btn-xs px-2.5"
-                            title={`Delete ${item.name}`}
-                          >
-                            <i className="fas fa-trash-can text-xs" />
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   )
@@ -339,158 +365,17 @@ export default function AdminInventory() {
         </motion.div>
       </AnimatePresence>
 
-      {stockTarget && (
-        <StockModal item={stockTarget.item} mode={stockTarget.mode} pendingTasks={pendingTasks} onClose={() => setStockTarget(null)} />
+      {/* Stock Ledger Modal */}
+      {viewingLedgerItem && (
+        <StockLedgerModal item={viewingLedgerItem} onClose={() => setViewingLedgerItem(null)} />
       )}
 
-      {itemToDelete && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && !isDeleting && setItemToDelete(null)}>
-          <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-            className="card p-6 w-full max-w-sm bg-white rounded-2xl shadow-xl text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto mb-3 text-xl">
-              <i className="fas fa-trash-can" />
-            </div>
-            <h3 className="font-display font-bold text-lg text-navy mb-1">Delete Item?</h3>
-            <p className="text-xs text-slate-500 mb-5">
-              Are you sure you want to remove <strong className="text-navy">{itemToDelete.name}</strong> ({itemToDelete.quantity} {itemToDelete.unit}) from inventory? This action cannot be undone.
-            </p>
-            <div className="flex gap-2 justify-center">
-              <button
-                disabled={isDeleting}
-                onClick={() => setItemToDelete(null)}
-                className="btn btn-gray btn-sm px-4"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={isDeleting}
-                onClick={async () => {
-                  setIsDeleting(true)
-                  const res = await deleteInventoryItem(itemToDelete.id)
-                  setIsDeleting(false)
-                  if (res.ok) {
-                    toast.success(`"${itemToDelete.name}" removed from inventory.`)
-                  } else {
-                    toast.error(res.message || 'Failed to delete item.')
-                  }
-                  setItemToDelete(null)
-                }}
-                className="btn btn-danger btn-sm px-4 flex items-center gap-1.5"
-              >
-                {isDeleting ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-trash-can" />}
-                Delete Item
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
-      {showAddItem && (
-        <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowAddItem(false)}>
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="modal-box">
-            <div className="modal-header">
-              <h3 className="font-display font-bold text-base text-navy">Add Relief Item</h3>
-              <button onClick={() => setShowAddItem(false)} className="btn btn-gray btn-xs">
-                <i className="fas fa-xmark" />
-              </button>
-            </div>
-            <div className="modal-body">
-              {pendingTasks.length > 0 && (
-                <div className="mb-4 bg-amber-50 rounded-xl p-3 border border-amber-200">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                      <i className="fas fa-boxes-packing text-amber-600" />
-                      Pending Donated Goods ({pendingTasks.length})
-                    </div>
-                    <span className="text-[10px] text-amber-700 font-semibold">Click ⚡ Auto-Fill or ✓ Clear</span>
-                  </div>
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                    {pendingTasks.map(task => (
-                      <div key={`${task.supplierId}-${task.itemIndex}`}
-                        className="flex items-center justify-between p-2 bg-white rounded-lg border border-amber-200 text-xs">
-                        <div className="min-w-0 flex-1">
-                          <span className="font-bold text-navy">{task.item_name}</span>
-                          <span className="text-slate-500 text-[11px] ml-1.5">({task.quantity} {task.unit} · {task.supplierName})</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <button type="button" onClick={() => handleAutoFillTask(task)}
-                            className="btn bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] py-1 px-2.5 rounded-lg flex items-center gap-1">
-                            <i className="fas fa-bolt" /> Auto-Fill
-                          </button>
-                          <button type="button"
-                            onClick={async () => {
-                              await fulfillDonationTask(task.supplierId, task.itemIndex, null, 0)
-                              toast.success(`Cleared task for "${task.item_name}"`)
-                            }}
-                            title="Mark as already added / Clear task"
-                            className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-emerald-100 text-slate-600 hover:text-emerald-700 flex items-center justify-center text-xs transition-all">
-                            <i className="fas fa-check" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedTask && (
-                <div className="mb-3 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs text-blue-800">
-                  <span>Linked to donation: <strong>{selectedTask.item_name}</strong> ({selectedTask.supplierName})</span>
-                  <button type="button" onClick={() => setSelectedTask(null)} className="text-blue-500 hover:text-blue-700 text-xs font-bold">Unlink</button>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label">Item Name *</label>
-                <input className="form-input" value={newItem.name}
-                  onChange={e => setNewItem(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Rice, Canned Tuna" autoFocus />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Category *</label>
-                <select className="form-input" value={newItem.category_id}
-                  onChange={e => setNewItem(f => ({ ...f, category_id: parseInt(e.target.value) }))}>
-                  <option value="">Select category</option>
-                  {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="form-group">
-                  <label className="form-label">Initial Quantity</label>
-                  <input type="number" min="0" className="form-input" value={newItem.quantity}
-                    onChange={e => setNewItem(f => ({ ...f, quantity: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Unit *</label>
-                  <input className="form-input" value={newItem.unit}
-                    onChange={e => setNewItem(f => ({ ...f, unit: e.target.value }))}
-                    placeholder="kg, cans, pcs" />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Low Alert at</label>
-                  <input type="number" className="form-input" value={newItem.low_threshold}
-                    onChange={e => setNewItem(f => ({ ...f, low_threshold: e.target.value }))} />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Critical Alert at</label>
-                  <input type="number" className="form-input" value={newItem.critical_threshold}
-                    onChange={e => setNewItem(f => ({ ...f, critical_threshold: e.target.value }))} />
-                </div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button onClick={() => setShowAddItem(false)} className="btn btn-gray">Cancel</button>
-              <button onClick={handleAddItem} className="btn btn-primary"><i className="fas fa-plus" /> Add Item</button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
+      {/* Add Category Modal */}
       {showAddCat && (
         <div className="modal-overlay" onClick={e => e.target === e.currentTarget && setShowAddCat(false)}>
-          <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} className="modal-box">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="modal-box">
             <div className="modal-header">
-              <h3 className="font-display font-bold text-base text-navy">Add Category</h3>
+              <h3 className="font-display font-bold text-base text-navy">Add Inventory Category</h3>
               <button onClick={() => setShowAddCat(false)} className="btn btn-gray btn-xs">
                 <i className="fas fa-xmark" />
               </button>
@@ -500,7 +385,7 @@ export default function AdminInventory() {
                 <label className="form-label">Category Name *</label>
                 <input className="form-input" value={newCat.name}
                   onChange={e => setNewCat(f => ({ ...f, name: e.target.value }))}
-                  placeholder="e.g. Baby Care" autoFocus />
+                  placeholder="e.g. Baby Care, Water & Sanitation" autoFocus />
               </div>
               <div className="form-group">
                 <label className="form-label">Font Awesome Icon Class</label>
@@ -519,7 +404,7 @@ export default function AdminInventory() {
             </div>
             <div className="modal-footer">
               <button onClick={() => setShowAddCat(false)} className="btn btn-gray">Cancel</button>
-              <button onClick={handleAddCat} className="btn btn-primary"><i className="fas fa-plus" /> Add</button>
+              <button onClick={handleAddCat} className="btn btn-primary"><i className="fas fa-plus" /> Add Category</button>
             </div>
           </motion.div>
         </div>

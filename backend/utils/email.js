@@ -155,3 +155,56 @@ export const sendEmailVerificationToken = async (recipientEmail, recipientName, 
   });
 };
 
+/**
+ * Send Beneficiary Status Change Notification Email (Active / Inactive)
+ */
+export const sendBeneficiaryStatusEmail = async ({ toEmail, toName, status, remarks, hhCode }) => {
+  if (!toEmail) return { ok: false, message: 'No recipient email provided' };
+
+  const isActive = status === 'active' || status === 'approved';
+  const statusColor = isActive ? '#16a34a' : '#dc2626';
+  const statusTitle = isActive ? 'Beneficiary Status: Active' : 'Beneficiary Status: Inactive';
+
+  console.log(`[STATUS EMAIL] Sending status update (${status}) to ${toEmail} for ${toName}`);
+
+  const htmlContent = `
+    <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 550px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <h2 style="color: #0a1f47; margin: 0; font-size: 20px; font-weight: 800;">Barangay Puerto Relief System</h2>
+        <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Beneficiary Status Notification</p>
+      </div>
+
+      <div style="background-color: ${isActive ? '#f0fdf4' : '#fef2f2'}; border: 1px solid ${isActive ? '#bbf7d0' : '#fecaca'}; border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+        <div style="font-size: 16px; font-weight: 700; color: ${statusColor}; margin-bottom: 6px;">
+          ${statusTitle}
+        </div>
+        <p style="margin: 0; font-size: 14px; color: #334155; line-height: 1.5;">
+          Hello <strong>${toName || 'Beneficiary'}</strong>, your record${hhCode ? ` under Household <strong>${hhCode}</strong>` : ''} has been updated to:
+          <span style="font-weight: 800; color: ${statusColor}; text-transform: uppercase;"> ${status}</span>.
+        </p>
+        ${remarks ? `<p style="margin-top: 10px; font-size: 13px; color: #64748b; background: #fff; padding: 8px 12px; border-radius: 6px;"><strong>Remarks:</strong> ${remarks}</p>` : ''}
+      </div>
+
+      <div style="font-size: 13px; color: #64748b; line-height: 1.5; margin-bottom: 20px;">
+        ${isActive
+          ? 'You are active in our masterlist and eligible to receive relief distributions and claim aid packages using your QR code.'
+          : 'Your account/record has been marked inactive. If you believe this is an error or would like to request reactivation, you can submit an Activation Request directly through the Beneficiary Portal or visit the Barangay Hall.'}
+      </div>
+
+      <div style="text-align: center; border-top: 1px solid #f1f5f9; padding-top: 16px; font-size: 12px; color: #94a3b8;">
+        Barangay Puerto Relief Inventory & Distribution Monitoring System<br/>
+        Cagayan de Oro City
+      </div>
+    </div>
+  `;
+
+  return sendTransactionalEmail({
+    toEmail,
+    toName,
+    subject: `🔔 Barangay Puerto Relief: Your Status is now ${status.toUpperCase()}`,
+    htmlContent,
+    logLabel: `Status Change Email (${status})`,
+  });
+};
+
+

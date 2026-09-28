@@ -14,6 +14,7 @@ import qrcodesRoutes from './routes/qrcodes.js';
 import notificationsRoutes from './routes/notifications.js';
 import reportsRoutes from './routes/reports.js';
 import settingsRoutes from './routes/settings.js';
+import receivingRoutes from './routes/receiving.js';
 
 import { prisma } from './db/prisma.js';
 
@@ -52,6 +53,8 @@ app.use('/api/households', householdsRoutes);
 app.use('/api/status-changes', membersRoutes);
 app.use('/api/cycles', cyclesRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/receiving', receivingRoutes);
+app.use('/api/donors', receivingRoutes);
 app.use('/api/distributions', distributionsRoutes);
 app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/qrcodes', qrcodesRoutes);
