@@ -360,8 +360,23 @@
   .no-print, .sidebar, .topbar, .bottom-nav { display: none !important; }
   body { background: white; }
   main, .page-content { padding: 0 !important; }
-  .card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
-  .modal-overlay { display: none !important; }
+  .modal-overlay:not(:has(.print-slip)) { display: none !important; }
+  .modal-overlay:has(.print-slip) {
+    display: block !important;
+    background: white !important;
+    position: absolute !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    z-index: 99999 !important;
+  }
+  .modal-overlay:has(.print-slip) .modal-box {
+    box-shadow: none !important;
+    border: none !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border-radius: 0 !important;
+  }
   .print-centered { max-width: 680px !important; margin-left: auto !important; margin-right: auto !important; }
   .confidential::before {
     content: 'CONFIDENTIAL';

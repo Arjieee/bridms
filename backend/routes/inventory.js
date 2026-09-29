@@ -7,6 +7,7 @@ import {
   stockIn,
   stockOut,
   getItemLedger,
+  repackItem,
 } from '../controllers/inventoryController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRoles } from '../middleware/roles.js';
@@ -20,6 +21,7 @@ router.get('/:id/ledger', getItemLedger);
 router.post('/', requireRoles('admin', 'staff'), addItem);
 router.put('/:id', requireRoles('admin', 'staff'), updateItem);
 router.delete('/:id', requireRoles('admin', 'staff'), deleteItem);
+router.post('/repack', requireRoles('admin', 'staff'), repackItem);
 router.post('/:id/stock-in', requireRoles('admin', 'staff'), stockIn);
 router.post('/:id/stock-out', requireRoles('admin', 'staff'), stockOut);
 

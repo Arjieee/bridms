@@ -78,8 +78,11 @@ function StockLedgerModal({ item, onClose }) {
             <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
               Stock Ledger &amp; Running Balance
             </div>
-            <h2 className="font-display font-black text-2xl text-navy uppercase tracking-tight">
-              {item.name}
+            <h2 className="font-display font-black text-2xl text-navy uppercase tracking-tight flex items-center gap-2">
+              <span>{item.name}</span>
+              <span className="text-blue-600 text-base font-bold bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                {item.unit}
+              </span>
             </h2>
             <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
               <span className="font-mono font-semibold text-slate-600">{item.item_code}</span>
@@ -185,10 +188,409 @@ function StockLedgerModal({ item, onClose }) {
   )
 }
 
+const BULK_UNITS_SET = new Set([
+  'sack', 'sacks',
+  'box', 'boxes',
+  'case', 'cases',
+  'carton', 'cartons',
+  'crate', 'crates',
+  'bale', 'bales',
+  'bundle', 'bundles',
+  'container', 'containers',
+  'drum', 'drums',
+  'carboy', 'carboys',
+  'gallon', 'gallons',
+  'bag', 'bags',
+  'tub', 'tubs',
+])
+
+export function isBulkPackaging(unit) {
+  if (!unit) return false
+  const clean = unit.trim().toLowerCase()
+  if (BULK_UNITS_SET.has(clean)) return true
+  const bulkKeywords = ['sack', 'box', 'case', 'carton', 'crate', 'bale', 'bundle', 'container', 'drum', 'carboy', 'gallon', 'bag']
+  return bulkKeywords.some(k => clean.includes(k))
+}
+
+function RepackModal({ item, allInventory, onClose }) {
+  const { repackInventoryItem } = useAppStore()
+  const [sourceQty, setSourceQty] = useState('')
+  const [targetUnit, setTargetUnit] = useState('')
+  const [yieldPerUnit, setYieldPerUnit] = useState('')
+  const [totalYield, setTotalYield] = useState('')
+  const [remarks, setRemarks] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const currUnit = (item.unit || '').trim().toLowerCase()
+
+  // Suggest common conversion units based on source unit
+  const suggestedUnits = (() => {
+    if (currUnit === 'sacks' || currUnit === 'sack') return ['kg', 'g', 'packs']
+    if (currUnit === 'boxes' || currUnit === 'box' || currUnit === 'cases' || currUnit === 'case') return ['pcs', 'cans', 'packs', 'bottles']
+    if (currUnit === 'packs' || currUnit === 'pack') return ['pcs', 'sachets']
+    return ['kg', 'pcs', 'packs', 'cans', 'bottles']
+  })()
+
+  // Default initial configuration based on source item
+  useEffect(() => {
+    if (currUnit === 'sacks' || currUnit === 'sack') {
+      setTargetUnit('kg')
+      setYieldPerUnit('50')
+      setSourceQty('1')
+      setTotalYield('50')
+    } else if (currUnit === 'boxes' || currUnit === 'box' || currUnit === 'cases' || currUnit === 'case') {
+      setTargetUnit('pcs')
+      setYieldPerUnit('24')
+      setSourceQty('1')
+      setTotalYield('24')
+    } else {
+      setSourceQty('1')
+    }
+  }, [currUnit])
+
+  const handleSourceQtyChange = (val) => {
+    setSourceQty(val)
+    const s = parseFloat(val)
+    const y = parseFloat(yieldPerUnit)
+    if (!isNaN(s) && !isNaN(y) && s > 0 && y > 0) {
+      setTotalYield((s * y).toString())
+    }
+  }
+
+  const handleYieldPerUnitChange = (val) => {
+    setYieldPerUnit(val)
+    const s = parseFloat(sourceQty)
+    const y = parseFloat(val)
+    if (!isNaN(s) && !isNaN(y) && s > 0 && y > 0) {
+      setTotalYield((s * y).toString())
+    }
+  }
+
+  const handleTotalYieldChange = (val) => {
+    setTotalYield(val)
+    const tot = parseFloat(val)
+    const s = parseFloat(sourceQty)
+    if (!isNaN(tot) && !isNaN(s) && s > 0 && tot > 0) {
+      const perUnit = tot / s
+      setYieldPerUnit(Number.isInteger(perUnit) ? perUnit.toString() : perUnit.toFixed(2))
+    }
+  }
+
+  const cleanTargetUnit = (targetUnit || '').trim().toLowerCase()
+  const existingTarget = allInventory.find(
+    (i) =>
+      i.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
+      i.unit.trim().toLowerCase() === cleanTargetUnit &&
+      i.id !== item.id
+  )
+
+  const numSourceQty = parseFloat(sourceQty) || 0
+  const numTotalYield = parseFloat(totalYield) || 0
+  const hasEnoughStock = numSourceQty > 0 && numSourceQty <= item.quantity
+  const isDiffUnit = cleanTargetUnit && cleanTargetUnit !== currUnit
+  const hasValidYield = numTotalYield > 0
+  const isValid = hasEnoughStock && isDiffUnit && hasValidYield
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!isValid || submitting) return
+
+    setSubmitting(true)
+    const res = await repackInventoryItem({
+      source_item_id: item.id,
+      source_qty: numSourceQty,
+      target_unit: cleanTargetUnit,
+      yield_qty: numTotalYield,
+      remarks: remarks.trim(),
+    })
+    setSubmitting(false)
+
+    if (res.ok) {
+      toast.success(res.message || 'Stock successfully repacked!')
+      onClose()
+    } else {
+      toast.error(res.message || 'Failed to repack stock.')
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="card p-6 w-full max-w-lg bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-100"
+      >
+        {/* Modal Header */}
+        <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+          <div>
+            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
+              <i className="fas fa-boxes-packing" /> Repack &amp; Bulk Conversion
+            </div>
+            <h2 className="font-display font-black text-xl text-navy uppercase tracking-tight">
+              Convert {item.name}
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Break down bulk packaging into distribution units for relief distribution.
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-navy hover:bg-slate-100 flex items-center justify-center transition-colors"
+          >
+            <i className="fas fa-xmark text-sm" />
+          </button>
+        </div>
+
+        {/* Source Item Badge Box */}
+        <div className="mt-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base shadow-xs">
+              <i className="fas fa-box" />
+            </div>
+            <div>
+              <div className="font-bold text-navy text-sm">{item.name}</div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-mono">
+                <span>{item.item_code}</span>
+                <span>·</span>
+                <span>Bulk Unit: <strong className="text-navy">{item.unit}</strong></span>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Available</div>
+            <div className="text-base font-extrabold text-navy font-mono">
+              {item.quantity} <span className="text-xs font-semibold text-slate-500">{item.unit}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Conversion Form */}
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4 text-xs">
+          {/* Source Qty Input */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700">
+                Quantity to Open / Convert ({item.unit}) *
+              </label>
+              <span className="text-[10px] text-slate-400 font-mono">
+                Max: {item.quantity} {item.unit}
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                min="0.1"
+                max={item.quantity}
+                step="any"
+                required
+                className="form-input text-xs py-2 flex-1 rounded-xl"
+                placeholder={`Number of ${item.unit} to repack...`}
+                value={sourceQty}
+                onChange={(e) => handleSourceQtyChange(e.target.value)}
+              />
+              <div className="flex gap-1">
+                {[1, 2, 5].filter((n) => n <= item.quantity).map((n) => (
+                  <button
+                    key={n}
+                    type="button"
+                    onClick={() => handleSourceQtyChange(n.toString())}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-colors"
+                  >
+                    {n}
+                  </button>
+                ))}
+                {item.quantity > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSourceQtyChange(item.quantity.toString())}
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 text-slate-600 hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 transition-colors"
+                  >
+                    All
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Target Unit of Measure */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <label className="font-bold text-slate-700">
+                Target Distribution Unit *
+              </label>
+              <span className="text-[10px] text-slate-400">e.g. kg, packs, cans, pcs</span>
+            </div>
+            <input
+              type="text"
+              required
+              className="form-input text-xs py-2 w-full rounded-xl"
+              placeholder="e.g. kg, packs, cans, pcs..."
+              value={targetUnit}
+              onChange={(e) => setTargetUnit(e.target.value)}
+            />
+            {/* Suggested Chips */}
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <span className="text-[10px] text-slate-400 font-semibold">Quick select:</span>
+              {suggestedUnits.map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  onClick={() => setTargetUnit(u)}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                    cleanTargetUnit === u
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                  }`}
+                >
+                  {u}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Conversion Ratio / Total Yield */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Yield per 1 {item.unit}
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="any"
+                className="form-input text-xs py-2 w-full rounded-xl"
+                placeholder={`e.g. 50 ${cleanTargetUnit || 'units'}`}
+                value={yieldPerUnit}
+                onChange={(e) => handleYieldPerUnitChange(e.target.value)}
+              />
+              <span className="text-[10px] text-slate-400 block mt-1">
+                1 {item.unit} = {yieldPerUnit || '...'} {cleanTargetUnit || 'unit'}
+              </span>
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">
+                Total Output Yield *
+              </label>
+              <input
+                type="number"
+                min="0.01"
+                step="any"
+                required
+                className="form-input text-xs py-2 w-full rounded-xl font-bold text-navy"
+                placeholder={`Total ${cleanTargetUnit || 'units'}...`}
+                value={totalYield}
+                onChange={(e) => handleTotalYieldChange(e.target.value)}
+              />
+              <span className="text-[10px] text-slate-400 block mt-1">
+                Total to be added in inventory
+              </span>
+            </div>
+          </div>
+
+          {/* Audit Remarks */}
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">
+              Audit Remarks / Purpose <span className="font-normal text-slate-400">(Optional)</span>
+            </label>
+            <input
+              type="text"
+              className="form-input text-xs py-2 w-full rounded-xl"
+              placeholder="e.g. Repacked for Barangay relief package distribution"
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+            />
+          </div>
+
+          {/* Conversion Live Impact Box */}
+          <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2">
+            <div className="text-[11px] font-bold text-blue-900 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <i className="fas fa-arrow-right-arrow-left text-blue-600" /> Stock Ledger Impact Preview
+              </span>
+              <span className="text-[10px] uppercase font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                Live
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-blue-200/50">
+              <div className="bg-white p-2.5 rounded-lg border border-blue-100 shadow-2xs">
+                <div className="text-[10px] text-slate-500 font-semibold uppercase">Source Deduction</div>
+                <div className="font-bold text-navy text-xs truncate">{item.name} [{item.unit}]</div>
+                <div className="flex items-center justify-between mt-1 text-xs font-mono">
+                  <span className="text-slate-500">{item.quantity}</span>
+                  <span className="text-red-500 font-bold">-{numSourceQty}</span>
+                  <span className="font-bold text-navy">
+                    {Math.max(0, item.quantity - numSourceQty)} {item.unit}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-white p-2.5 rounded-lg border border-blue-100 shadow-2xs">
+                <div className="text-[10px] text-slate-500 font-semibold uppercase">Target Addition</div>
+                <div className="font-bold text-navy text-xs truncate">
+                  {item.name} [{cleanTargetUnit || '...'}]
+                </div>
+                <div className="flex items-center justify-between mt-1 text-xs font-mono">
+                  <span className="text-slate-500">
+                    {existingTarget ? existingTarget.quantity : 0}
+                  </span>
+                  <span className="text-emerald-600 font-bold">+{numTotalYield}</span>
+                  <span className="font-bold text-navy">
+                    {(existingTarget ? existingTarget.quantity : 0) + numTotalYield} {cleanTargetUnit}
+                  </span>
+                </div>
+              </div>
+            </div>
+            {!existingTarget && cleanTargetUnit && (
+              <div className="text-[10px] text-blue-700 bg-blue-100/50 p-1.5 rounded flex items-center gap-1">
+                <i className="fas fa-info-circle" />
+                <span>
+                  A new inventory item record for <strong>{item.name} [{cleanTargetUnit}]</strong> will be automatically created under this category.
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Modal Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={submitting}
+              className="btn btn-gray btn-xs px-4"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!isValid || submitting}
+              className="btn btn-primary btn-xs px-4 flex items-center gap-1.5 disabled:opacity-40"
+            >
+              {submitting ? (
+                <>
+                  <i className="fas fa-spinner fa-spin" />
+                  <span>Repacking...</span>
+                </>
+              ) : (
+                <>
+                  <i className="fas fa-check-circle" />
+                  <span>Confirm Repack</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function AdminInventory() {
   const { inventory, categories, addCategory } = useAppStore()
   const [selectedCat, setSelectedCat] = useState(null)
   const [viewingLedgerItem, setViewingLedgerItem] = useState(null)
+  const [repackingItem, setRepackingItem] = useState(null)
   const [showAddCat, setShowAddCat] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [newCat, setNewCat] = useState({ name: '', icon: 'fa-box', color: '#1a56db' })
@@ -300,7 +702,7 @@ export default function AdminInventory() {
         })}
       </div>
 
-      {/* Inventory Table with Stock Ledger Modal Trigger */}
+      {/* Inventory Table with Stock Ledger & Repack Modal Triggers */}
       <AnimatePresence mode="wait">
         <motion.div key={selectedCat?.id ?? 'all'}
           initial={{ opacity: 0 }} animate={{ opacity: 1 }}
@@ -321,9 +723,10 @@ export default function AdminInventory() {
             <table className="tbl w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
-                  <th className="w-[50%] text-left pl-5 py-3.5">Item</th>
-                  <th className="w-[30%] text-left py-3.5">Stock in Hand</th>
-                  <th className="w-[20%] text-right pr-5 py-3.5">Status</th>
+                  <th className="w-[46%] text-left pl-5 py-3.5">Item</th>
+                  <th className="w-[26%] text-left py-3.5">Stock in Hand</th>
+                  <th className="w-[14%] text-left py-3.5">Status</th>
+                  <th className="w-[14%] text-right pr-5 py-3.5">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -337,24 +740,63 @@ export default function AdminInventory() {
                   return (
                     <tr
                       key={item.id}
-                      onClick={() => setViewingLedgerItem(item)}
-                      className={`transition-colors cursor-pointer hover:bg-blue-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}
-                      title={`Click to view ${item.name} Stock Ledger history`}
+                      className={`transition-colors hover:bg-blue-50/60 ${isCrit ? 'row-critical' : isLow ? 'row-low' : ''}`}
                     >
-                      <td data-label="Item" className="pl-5 py-4">
-                        <div className="font-semibold text-navy text-sm flex items-center gap-1.5">
+                      <td
+                        data-label="Item"
+                        className="pl-5 py-4 cursor-pointer"
+                        onClick={() => setViewingLedgerItem(item)}
+                        title={`Click to view ${item.name} Stock Ledger history`}
+                      >
+                        <div className="font-semibold text-navy text-sm flex items-center gap-2 flex-wrap">
                           <span>{item.name}</span>
+                          <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200">
+                            {item.unit}
+                          </span>
                           <span className="text-[10px] text-slate-400 font-mono">({item.item_code})</span>
                         </div>
                         <Calc item={item} />
                       </td>
-                      <td data-label="Stock" className="py-4">
+                      <td
+                        data-label="Stock"
+                        className="py-4 cursor-pointer"
+                        onClick={() => setViewingLedgerItem(item)}
+                        title={`Click to view ${item.name} Stock Ledger history`}
+                      >
                         <span className="font-bold text-navy text-sm">{display}</span>
                       </td>
-                      <td data-label="Status" className="text-right pr-5 py-4">
+                      <td
+                        data-label="Status"
+                        className="py-4 cursor-pointer"
+                        onClick={() => setViewingLedgerItem(item)}
+                        title={`Click to view ${item.name} Stock Ledger history`}
+                      >
                         {isCrit ? <span className="badge badge-critical">Critical</span>
                           : isLow ? <span className="badge badge-low">Low</span>
                             : <span className="badge badge-sufficient">OK</span>}
+                      </td>
+                      <td data-label="Actions" className="text-right pr-5 py-4 whitespace-nowrap">
+                        <div className="flex items-center justify-end">
+                          {isBulkPackaging(item.unit) ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRepackingItem(item);
+                              }}
+                              disabled={item.quantity <= 0}
+                              className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300 font-bold flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                              title={item.quantity <= 0 ? "No stock available to repack" : `Repack / Convert bulk ${item.unit} into distribution units`}
+                            >
+                              <i className="fas fa-boxes-packing text-[11px]" />
+                              <span>Repack</span>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-slate-300 select-none px-2" title="Individual distribution unit (not bulk)">
+                              —
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )
@@ -368,6 +810,15 @@ export default function AdminInventory() {
       {/* Stock Ledger Modal */}
       {viewingLedgerItem && (
         <StockLedgerModal item={viewingLedgerItem} onClose={() => setViewingLedgerItem(null)} />
+      )}
+
+      {/* Repack & Convert Bulk Modal */}
+      {repackingItem && (
+        <RepackModal
+          item={repackingItem}
+          allInventory={inventory}
+          onClose={() => setRepackingItem(null)}
+        />
       )}
 
       {/* Add Category Modal */}

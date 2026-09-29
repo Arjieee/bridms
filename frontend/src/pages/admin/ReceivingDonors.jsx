@@ -445,15 +445,15 @@ export default function ReceivingDonors() {
                       onChange={(e) => {
                         const val = e.target.value
                         handleItemChange(idx, 'item_name', val)
-                        // If matching an existing inventory item, auto-select category & unit
+                        // If matching an existing inventory item, auto-select category
                         const matched = inventory.find(
                           (i) => i.name.toLowerCase() === val.trim().toLowerCase()
                         )
                         if (matched) {
-                          if (matched.category_id) {
+                          if (matched.category_id && !row.category_id) {
                             handleItemChange(idx, 'category_id', matched.category_id)
                           }
-                          if (matched.unit) {
+                          if (matched.unit && !row.uom) {
                             handleItemChange(idx, 'uom', matched.unit)
                           }
                         }
@@ -465,11 +465,44 @@ export default function ReceivingDonors() {
                         const cat = categories.find((c) => c.id === inv.category_id)
                         return (
                           <option key={inv.id} value={inv.name}>
-                            {inv.name} ({inv.quantity} {inv.unit} in stock - {cat?.name || 'General'})
+                            {`${inv.name} [${inv.unit}] (${inv.quantity} ${inv.unit} in stock - ${cat?.name || 'General'})`}
                           </option>
                         )
                       })}
                     </datalist>
+
+                    {/* Quick UOM helper chips if this item already exists in inventory with one or more units */}
+                    {row.item_name.trim() && (
+                      (() => {
+                        const matches = inventory.filter(
+                          (i) => i.name.toLowerCase() === row.item_name.trim().toLowerCase()
+                        )
+                        if (matches.length === 0) return null
+                        return (
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span className="text-[10px] text-slate-400 font-semibold">Existing UOM:</span>
+                            {matches.map((m) => (
+                              <button
+                                key={m.id}
+                                type="button"
+                                onClick={() => {
+                                  handleItemChange(idx, 'uom', m.unit)
+                                  if (m.category_id) handleItemChange(idx, 'category_id', m.category_id)
+                                }}
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                                  row.uom?.toLowerCase() === m.unit?.toLowerCase()
+                                    ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                                    : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+                                }`}
+                                title={`Click to use ${m.unit} (${m.quantity} currently in stock)`}
+                              >
+                                {m.unit} ({m.quantity})
+                              </button>
+                            ))}
+                          </div>
+                        )
+                      })()
+                    )}
                   </div>
 
                   {/* Quantity */}

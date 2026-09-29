@@ -26,12 +26,12 @@ export const addItem = async (req, res) => {
     const categoryId = Number(item.category_id);
     const addQty = parseFloat(item.quantity) || 0;
 
-    // Check for existing item with case-insensitive name and matching category or unit
+    // Check for existing item with case-insensitive name AND matching unit
     const allItems = await prisma.inventoryItem.findMany();
     const existing = allItems.find(
       (i) =>
         i.name.trim().toLowerCase() === cleanName.toLowerCase() &&
-        (Number(i.category_id) === categoryId || i.unit.trim().toLowerCase() === cleanUnit.toLowerCase())
+        i.unit.trim().toLowerCase() === cleanUnit.toLowerCase()
     );
 
     if (existing) {
@@ -242,6 +242,152 @@ export const getItemLedger = async (req, res) => {
   } catch (err) {
     console.error('Error fetching item ledger:', err);
     return res.status(500).json({ ok: false, message: 'Failed to fetch item stock ledger.' });
+  }
+};
+
+const BULK_KEYWORDS = [
+  'sack', 'box', 'case', 'carton', 'crate',
+  'bale', 'bundle', 'container', 'drum', 'carboy',
+  'gallon', 'bag', 'tub'
+];
+
+const isBulkPackaging = (unit) => {
+  if (!unit) return false;
+  const clean = unit.trim().toLowerCase();
+  return BULK_KEYWORDS.some((k) => clean.includes(k));
+};
+
+/**
+ * Repack / Convert bulk stock into another unit (e.g. 2 sacks of Rice -> 100 kg of Rice)
+ */
+export const repackItem = async (req, res) => {
+  try {
+    const {
+      source_item_id,
+      source_qty,
+      target_unit,
+      yield_qty,
+      remarks,
+    } = req.body;
+
+    const sourceId = parseInt(source_item_id);
+    const sourceQty = parseFloat(source_qty);
+    const yieldQty = parseFloat(yield_qty);
+    const targetUnit = (target_unit || '').trim().toLowerCase();
+
+    if (isNaN(sourceId) || isNaN(sourceQty) || sourceQty <= 0) {
+      return res.status(400).json({ ok: false, message: 'Valid source item and quantity to convert are required.' });
+    }
+    if (!targetUnit) {
+      return res.status(400).json({ ok: false, message: 'Target unit of measure is required.' });
+    }
+    if (isNaN(yieldQty) || yieldQty <= 0) {
+      return res.status(400).json({ ok: false, message: 'Valid positive yield quantity is required.' });
+    }
+
+    const sourceItem = await prisma.inventoryItem.findUnique({
+      where: { id: sourceId },
+    });
+    if (!sourceItem) {
+      return res.status(404).json({ ok: false, message: 'Source inventory item not found.' });
+    }
+
+    if (!isBulkPackaging(sourceItem.unit)) {
+      return res.status(400).json({
+        ok: false,
+        message: `Only bulk packaging units (e.g. sacks, boxes, cases, crates, cartons, bales, gallons) can be repacked. "${sourceItem.unit}" is already an individual distribution unit.`,
+      });
+    }
+
+    if (sourceItem.unit.trim().toLowerCase() === targetUnit) {
+      return res.status(400).json({
+        ok: false,
+        message: `Cannot repack into the same unit (${sourceItem.unit}). Target unit must be different (e.g. sacks to kg).`,
+      });
+    }
+
+    if (sourceItem.quantity < sourceQty) {
+      return res.status(400).json({
+        ok: false,
+        message: `Insufficient stock in ${sourceItem.name} [${sourceItem.unit}]. Available: ${sourceItem.quantity}, requested to convert: ${sourceQty}`,
+      });
+    }
+
+    // Find or create target item (matching sourceItem.name and targetUnit)
+    const allItems = await prisma.inventoryItem.findMany();
+    let targetItem = allItems.find(
+      (i) =>
+        i.name.trim().toLowerCase() === sourceItem.name.trim().toLowerCase() &&
+        i.unit.trim().toLowerCase() === targetUnit
+    );
+
+    const repackRef = 'RPK-' + Date.now().toString().slice(-8);
+    const userIdentifier = req.user?.username || req.user?.full_name || 'Staff';
+
+    if (!targetItem) {
+      const maxItem = await prisma.inventoryItem.findFirst({
+        orderBy: { id: 'desc' },
+        select: { id: true },
+      });
+      const nextId = (maxItem?.id || 0) + 1;
+      const itemCode = 'INV-' + String(nextId).padStart(3, '0');
+
+      targetItem = await prisma.inventoryItem.create({
+        data: {
+          id: nextId,
+          item_code: itemCode,
+          name: sourceItem.name,
+          category_id: sourceItem.category_id,
+          unit: targetUnit,
+          quantity: 0,
+          low_threshold: 15,
+          critical_threshold: 5,
+        },
+      });
+    }
+
+    // 1. Deduct from source item
+    const updatedSource = await adjustStock(
+      sourceItem.id,
+      sourceQty,
+      'out',
+      `Repacked: -${sourceQty} ${sourceItem.unit} → +${yieldQty} ${targetUnit}${remarks ? ` (${remarks.trim()})` : ''}`,
+      {
+        reference_id: repackRef,
+        recorded_by: userIdentifier,
+      }
+    );
+
+    // 2. Add to target item
+    const updatedTarget = await adjustStock(
+      targetItem.id,
+      yieldQty,
+      'in',
+      `Repack Yield: +${yieldQty} ${targetUnit} (from ${sourceQty} ${sourceItem.unit})${remarks ? ` (${remarks.trim()})` : ''}`,
+      {
+        reference_id: repackRef,
+        recorded_by: userIdentifier,
+      }
+    );
+
+    await addActivityLog({
+      account_id: req.user?.id,
+      username: req.user?.username,
+      role: req.user?.role,
+      action: 'repacked_stock',
+      details: `Repacked ${sourceQty} ${sourceItem.unit} of "${sourceItem.name}" into ${yieldQty} ${targetUnit} (${repackRef})`,
+    });
+
+    return res.json({
+      ok: true,
+      message: `Successfully repacked ${sourceQty} ${sourceItem.unit} into ${yieldQty} ${targetUnit}!`,
+      source_item: updatedSource,
+      target_item: updatedTarget,
+      repack_ref: repackRef,
+    });
+  } catch (err) {
+    console.error('Error during repack:', err);
+    return res.status(500).json({ ok: false, message: 'Failed to process stock repacking.' });
   }
 };
 

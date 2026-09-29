@@ -442,6 +442,22 @@ export const useAppStore = create((set, get) => ({
         }
       },
 
+      repackInventoryItem: async (data) => {
+        try {
+          const res = await apiFetch('/inventory/repack', {
+            method: 'POST',
+            body: JSON.stringify(data),
+          });
+          if (res.ok) {
+            await get().fetchInitialData();
+            return { ok: true, message: res.message, source_item: res.source_item, target_item: res.target_item };
+          }
+          return { ok: false, message: res.message || 'Failed to repack item.' };
+        } catch (err) {
+          return { ok: false, message: err.message || 'Failed to repack item.' };
+        }
+      },
+
       updateStandardPackage: (cycleType, items) =>
         set((s) => ({ standardPackages: { ...s.standardPackages, [cycleType]: items } })),
 
@@ -599,7 +615,7 @@ export const useAppStore = create((set, get) => ({
           });
           if (res.ok) {
             await get().fetchInitialData();
-            return { ok: true, dist_code: res.dist_code };
+            return { ok: true, dist_code: res.dist_code, distribution: res.distribution };
           }
           return { ok: false, message: res.message };
         } catch (err) {

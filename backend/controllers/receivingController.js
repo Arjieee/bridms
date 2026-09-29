@@ -241,19 +241,24 @@ export const createReceiving = async (req, res) => {
         continue;
       }
 
-      // Check if inventory item already exists
+      // Check if inventory item already exists with matching name AND unit
       let invItem = null;
       if (rawItem.item_id) {
-        invItem = await prisma.inventoryItem.findUnique({
+        const potential = await prisma.inventoryItem.findUnique({
           where: { id: Number(rawItem.item_id) },
         });
+        if (potential && potential.unit.trim().toLowerCase() === uom.toLowerCase()) {
+          invItem = potential;
+        }
       }
 
       if (!invItem) {
-        // Try matching by exact name
+        // Match by BOTH exact name AND exact unit (case-insensitive)
         const allItems = await prisma.inventoryItem.findMany();
         invItem = allItems.find(
-          (i) => i.name.trim().toLowerCase() === itemName.toLowerCase()
+          (i) =>
+            i.name.trim().toLowerCase() === itemName.toLowerCase() &&
+            i.unit.trim().toLowerCase() === uom.toLowerCase()
         );
       }
 
@@ -264,7 +269,7 @@ export const createReceiving = async (req, res) => {
           invItem.id,
           qty,
           'in',
-          `Received from Donor: ${targetDonor.name}`,
+          `Received from Donor: ${targetDonor.name} (+${qty} ${invItem.unit})`,
           {
             reference_id: receiveCode,
             recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
