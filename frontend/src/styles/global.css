@@ -360,8 +360,8 @@
   .no-print, .sidebar, .topbar, .bottom-nav { display: none !important; }
   body { background: white; }
   main, .page-content { padding: 0 !important; }
-  .modal-overlay:not(:has(.print-slip)) { display: none !important; }
-  .modal-overlay:has(.print-slip) {
+  .modal-overlay:not(:has(.print-slip)):not(.print-slip) { display: none !important; }
+  .modal-overlay:has(.print-slip), .modal-overlay.print-slip {
     display: block !important;
     background: white !important;
     position: absolute !important;
@@ -369,7 +369,7 @@
     padding: 0 !important;
     z-index: 99999 !important;
   }
-  .modal-overlay:has(.print-slip) .modal-box {
+  .modal-overlay:has(.print-slip) .modal-box, .modal-overlay.print-slip .modal-box {
     box-shadow: none !important;
     border: none !important;
     max-width: 100% !important;
@@ -378,6 +378,11 @@
     border-radius: 0 !important;
   }
   .print-centered { max-width: 680px !important; margin-left: auto !important; margin-right: auto !important; }
+  body:has(.print-slip) .confidential::before,
+  body:has(.print-slip) .print-header,
+  body:has(.print-slip) .confidential > *:not(.modal-overlay) {
+    display: none !important;
+  }
   .confidential::before {
     content: 'CONFIDENTIAL';
     position: fixed;

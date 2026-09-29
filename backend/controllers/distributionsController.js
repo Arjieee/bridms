@@ -66,20 +66,109 @@ export const recordDistribution = async (req, res) => {
       return res.status(404).json({ ok: false, message: 'Household not found.' });
     }
 
-    const cycle = data.cycle_id
-      ? await prisma.cycle.findUnique({ where: { id: data.cycle_id } })
-      : null;
+    // Enforce active distribution cycle requirement
+    if (!data.cycle_id) {
+      return res.status(400).json({
+        ok: false,
+        message: 'An active distribution cycle is required to distribute relief goods. Please create or activate a cycle first.',
+      });
+    }
+
+    const cycle = await prisma.cycle.findUnique({ where: { id: data.cycle_id } });
+    if (!cycle || !cycle.is_active) {
+      return res.status(400).json({
+        ok: false,
+        message: 'The selected distribution cycle is not active or does not exist.',
+      });
+    }
+
+    // Strict Double-Claim Blocker: check if this household already received in this cycle
+    const existingClaim = await prisma.distribution.findFirst({
+      where: {
+        cycle_id: data.cycle_id,
+        household_id: data.household_id,
+      },
+    });
+    if (existingClaim) {
+      return res.status(400).json({
+        ok: false,
+        message: `Household ${hh.hh_code} has already claimed relief goods for cycle "${cycle.name}" on ${existingClaim.dist_date} (Tracking Code: ${existingClaim.dist_code}). Duplicate claims within the same cycle are prohibited.`,
+        existing_dist_code: existingClaim.dist_code,
+      });
+    }
 
     const head = hh.members?.find((m) => m.is_head);
     const distCode = 'DIST-' + Date.now().toString().slice(-8);
+
+    // Fetch all current inventory items to accurately match by ID or compound key (name + unit)
+    const allInv = await prisma.inventoryItem.findMany();
+    const resolvedItems = [];
+
+    // Deduct stock for distributed items and record in StockLedger
+    if (Array.isArray(data.items)) {
+      const recipientDesc = head ? `${head.fname} ${head.lname}` : (hh.purok_name || 'Household');
+      for (const item of data.items) {
+        const qty = parseFloat(item.quantity) || 0;
+        if (qty <= 0) continue;
+
+        let targetInv = null;
+        if (item.item_id) {
+          targetInv = allInv.find((inv) => inv.id === Number(item.item_id));
+        }
+
+        // If targetInv is null or name/unit doesn't match, look up by compound key (name + unit)
+        if (
+          !targetInv ||
+          (item.item_name &&
+            item.unit &&
+            (targetInv.name.trim().toLowerCase() !== item.item_name.trim().toLowerCase() ||
+              targetInv.unit.trim().toLowerCase() !== item.unit.trim().toLowerCase()))
+        ) {
+          const matchByNameUnit = allInv.find(
+            (inv) =>
+              inv.name.trim().toLowerCase() === (item.item_name || '').trim().toLowerCase() &&
+              inv.unit.trim().toLowerCase() === (item.unit || '').trim().toLowerCase()
+          );
+          if (matchByNameUnit) {
+            targetInv = matchByNameUnit;
+          }
+        }
+
+        if (targetInv) {
+          await adjustStock(
+            targetInv.id,
+            qty,
+            'out',
+            `Distribution: ${hh.hh_code} - ${recipientDesc} (${cycle.name})`,
+            {
+              reference_id: distCode,
+              recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
+            }
+          );
+          resolvedItems.push({
+            item_id: targetInv.id,
+            item_name: targetInv.name,
+            quantity: qty,
+            unit: targetInv.unit,
+          });
+        } else {
+          resolvedItems.push({
+            item_id: Number(item.item_id) || null,
+            item_name: item.item_name || 'Relief Item',
+            quantity: qty,
+            unit: item.unit || 'pcs',
+          });
+        }
+      }
+    }
 
     const distRecord = await prisma.distribution.create({
       data: {
         id: 'dist-' + shortId(),
         dist_code: distCode,
-        cycle_id: data.cycle_id || null,
-        cycle_name: cycle?.name || (data.type === 'special_assistance' ? 'Special Assistance' : 'Manual Distribution'),
-        cycle_type: cycle?.type || data.type_filter || 'emergency',
+        cycle_id: cycle.id,
+        cycle_name: cycle.name,
+        cycle_type: cycle.type,
         household_id: data.household_id,
         hh_code: hh.hh_code,
         purok_id: hh.purok_id,
@@ -92,15 +181,15 @@ export const recordDistribution = async (req, res) => {
         special_reason: data.special_reason || null,
         remarks: data.remarks || null,
         officials: JSON.stringify(data.officials || []),
-        items: JSON.stringify(data.items || []),
+        items: JSON.stringify(resolvedItems),
         recorded_by: req.user.id,
       },
     });
 
     // Mark matching QR codes as claimed
-    if (data.cycle_id && data.household_id) {
+    if (data.household_id) {
       const qrFilter = {
-        cycle_id: data.cycle_id,
+        cycle_id: cycle.id,
         household_id: data.household_id,
       };
       if (data.member_id) {
@@ -114,25 +203,6 @@ export const recordDistribution = async (req, res) => {
           claimed_at: new Date().toISOString(),
         },
       });
-    }
-
-    // Deduct stock for distributed items and record in StockLedger
-    if (Array.isArray(data.items)) {
-      const recipientDesc = head ? `${head.fname} ${head.lname}` : (hh.purok_name || 'Household');
-      for (const item of data.items) {
-        if (item.item_id && item.quantity) {
-          await adjustStock(
-            item.item_id,
-            parseFloat(item.quantity),
-            'out',
-            `Distribution: ${hh.hh_code} - ${recipientDesc} (${cycle?.name || 'Relief'})`,
-            {
-              reference_id: distCode,
-              recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
-            }
-          );
-        }
-      }
     }
 
     if (hh.account_id) {

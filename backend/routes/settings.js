@@ -8,6 +8,7 @@ import {
   getSectors,
   addSector,
   getActivityLogs,
+  updateStandardPackage,
 } from '../controllers/settingsController.js';
 import { requireAuth } from '../middleware/auth.js';
 import { requireRoles } from '../middleware/roles.js';
@@ -27,6 +28,7 @@ router.delete('/puroks/:id', requireRoles('admin'), deletePurok);
 router.put('/puroks/:id/restore', requireRoles('admin'), restorePurok);
 
 router.post('/sectors', requireRoles('admin'), addSector);
+router.put('/standard-packages/:sector_code', requireRoles('admin'), updateStandardPackage);
 
 router.get('/activity', requireRoles('admin'), getActivityLogs);
 

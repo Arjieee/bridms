@@ -95,6 +95,7 @@ function PieCard({ label, claimed, unclaimed, total, claimedNames, unclaimedName
 export default function AdminReports() {
   const { cycles, qrCodes, households, puroks, sectors, distributions } = useAppStore()
   const [cycleIdx, setCycleIdx] = useState(0)
+  const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
@@ -189,16 +190,6 @@ export default function AdminReports() {
 
   return (
     <div className="confidential">
-      {/* Official Print Header Seal (Visible when printing) */}
-      <div className="print-header hidden print:flex items-center gap-4 border-b-2 border-slate-900 pb-4 mb-6">
-        <img src="/logo.png" alt="Barangay Puerto Seal" className="w-16 h-16 object-contain" />
-        <div>
-          <h1 className="font-display font-extrabold text-sm text-slate-800 uppercase tracking-wider">Republic of the Philippines · City of Cagayan de Oro</h1>
-          <h2 className="font-display font-black text-xl text-slate-900">BARANGAY PUERTO RELIEF OPERATIONS</h2>
-          <p className="text-xs text-slate-600">Official Distribution Summary & Inventory Monitoring Report</p>
-        </div>
-      </div>
-
       <div className="flex items-center justify-between mb-3 no-print gap-2">
         <div className="min-w-0 flex-1">
           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-[11px] font-bold border border-red-200 max-w-full">
@@ -212,7 +203,12 @@ export default function AdminReports() {
             <i className="fas fa-file-csv text-emerald-600 text-sm" />
             <span className="text-xs">Export CSV</span>
           </button>
-          <button onClick={() => window.print()} className="btn btn-outline btn-sm py-1.5 px-2.5 flex items-center gap-1" title="Print Official Report">
+          <button
+            onClick={() => setShowPrintPreview(true)}
+            disabled={!currentCycle}
+            className="btn btn-outline btn-sm py-1.5 px-2.5 flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-2xs"
+            title="Preview and print official distribution summary report"
+          >
             <i className="fas fa-print text-sm" />
             <span className="hidden sm:inline text-xs">Print</span>
           </button>
@@ -315,6 +311,16 @@ export default function AdminReports() {
           </div>
         </>
       )}
+
+      {/* Print Preview Modal */}
+      {showPrintPreview && currentCycle && (
+        <ReportsPrintPreviewModal
+          cycle={currentCycle}
+          purokData={purokData}
+          sectorData={sectorData}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
     </div>
   )
 }
@@ -329,4 +335,263 @@ function nameForQR(qr, households) {
   }
   const member = hh.members?.find(m => m.id === qr.member_id)
   return member ? `${member.fname} ${member.lname} (${hh.hh_code})` : hh.hh_code
+}
+
+/**
+ * Printable Distribution Summary & Monitoring Report Modal
+ */
+function ReportsPrintPreviewModal({ cycle, purokData, sectorData, onClose }) {
+  if (!cycle) return null
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+
+  // Executive KPI summary calculations
+  const totalAllocated = purokData.reduce((acc, p) => acc + p.total, 0)
+  const totalClaimed = purokData.reduce((acc, p) => acc + p.claimed, 0)
+  const totalUnclaimed = purokData.reduce((acc, p) => acc + p.unclaimed, 0)
+  const pctClaimed = totalAllocated > 0 ? Math.round((totalClaimed / totalAllocated) * 100) : 0
+
+  return (
+    <div
+      className="modal-overlay print-slip fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="card modal-box p-6 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
+      >
+        {/* Close Button top-right */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="no-print absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
+          title="Close Preview"
+        >
+          <i className="fas fa-times text-sm" />
+        </button>
+
+        {/* Printable Document Section */}
+        <div id="report-summary-printable" className="space-y-4 text-slate-800">
+          {/* Header */}
+          <div className="text-center border-b pb-4 border-slate-200">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              Republic of the Philippines · City of Cagayan de Oro
+            </div>
+            <div className="text-lg font-black text-navy uppercase tracking-tight mt-0.5">
+              Barangay Puerto Disaster Risk Reduction &amp; Relief Operations
+            </div>
+            <div className="inline-block mt-2 px-3.5 py-0.5 bg-blue-50 border border-blue-200 rounded-full text-blue-800 font-bold text-xs uppercase tracking-wide">
+              Official Distribution Summary &amp; Monitoring Report
+            </div>
+          </div>
+
+          {/* Reference Meta Box */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-2.5 border-b border-slate-200">
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Date Generated</div>
+                <div className="font-bold text-slate-800 text-xs mt-0.5">{currentDate}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Sector Classification</div>
+                <div className="font-bold text-blue-700 uppercase text-xs mt-0.5">
+                  {cycle.type || 'General Sector'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Cycle Status</div>
+                <div className={`font-bold text-xs mt-0.5 ${cycle.is_active ? 'text-emerald-700 font-extrabold' : 'text-slate-600'}`}>
+                  {cycle.is_active ? 'ACTIVE OPERATION' : 'CONCLUDED / ARCHIVED'}
+                </div>
+              </div>
+            </div>
+
+            {/* Event Name */}
+            <div>
+              <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Disaster Event / Relief Cycle</div>
+              <div className="font-bold text-navy text-sm mt-0.5 leading-snug break-words">
+                {cycle.name}
+              </div>
+            </div>
+          </div>
+
+          {/* Executive KPI Metrics Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Allocated QRs</div>
+              <div className="text-lg font-black text-navy font-mono mt-0.5">{totalAllocated}</div>
+              <div className="text-[9px] text-slate-400">Total Eligible</div>
+            </div>
+            <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-3 text-center">
+              <div className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">Total Claimed</div>
+              <div className="text-lg font-black text-emerald-700 font-mono mt-0.5">{totalClaimed}</div>
+              <div className="text-[9px] text-emerald-600 font-semibold">{pctClaimed}% Complete</div>
+            </div>
+            <div className="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-center">
+              <div className="text-[10px] uppercase font-bold text-amber-800 tracking-wider">Total Unclaimed</div>
+              <div className="text-lg font-black text-amber-700 font-mono mt-0.5">{totalUnclaimed}</div>
+              <div className="text-[9px] text-amber-600 font-semibold">{100 - pctClaimed}% Pending</div>
+            </div>
+            <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-3 text-center">
+              <div className="text-[10px] uppercase font-bold text-blue-800 tracking-wider">Completion Rate</div>
+              <div className="text-lg font-black text-blue-700 font-mono mt-0.5">{pctClaimed}%</div>
+              <div className="text-[9px] text-blue-600 font-semibold">Distribution Pace</div>
+            </div>
+          </div>
+
+          {/* Purok Breakdown Table */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
+              <span>Purok Distribution Breakdown</span>
+              <span className="text-slate-500 font-semibold text-[10px] normal-case">
+                {purokData.length} {purokData.length === 1 ? 'purok' : 'puroks'} reporting
+              </span>
+            </div>
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-[10px] text-slate-600 font-bold uppercase border-b border-slate-200">
+                <tr>
+                  <th className="py-2.5 px-3.5 w-10">#</th>
+                  <th className="py-2.5 px-3.5">Purok Name</th>
+                  <th className="py-2.5 px-3.5 text-right w-24">Allocated</th>
+                  <th className="py-2.5 px-3.5 text-right w-24">Claimed</th>
+                  <th className="py-2.5 px-3.5 text-right w-24">Unclaimed</th>
+                  <th className="py-2.5 px-3.5 text-right w-28">Rate (%)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {purokData.length > 0 ? (
+                  purokData.map((p, idx) => {
+                    const rate = p.total > 0 ? Math.round((p.claimed / p.total) * 100) : 0
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3.5 text-slate-500 font-mono text-[11px]">{idx + 1}</td>
+                        <td className="py-2.5 px-3.5 font-bold text-navy">{p.label}</td>
+                        <td className="py-2.5 px-3.5 text-right font-mono text-slate-700">{p.total}</td>
+                        <td className="py-2.5 px-3.5 text-right font-mono font-bold text-emerald-700">{p.claimed}</td>
+                        <td className="py-2.5 px-3.5 text-right font-mono font-bold text-amber-700">{p.unclaimed}</td>
+                        <td className="py-2.5 px-3.5 text-right">
+                          <span className="inline-block px-2 py-0.5 rounded font-bold font-mono text-[10px] bg-slate-100 text-slate-800 border border-slate-200">
+                            {rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-4 px-3.5 text-center text-slate-500 italic">
+                      No purok distribution records found for this cycle.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              {purokData.length > 0 && (
+                <tfoot className="bg-slate-50 font-bold border-t-2 border-slate-200 text-slate-800">
+                  <tr>
+                    <td colSpan={2} className="py-2.5 px-3.5 text-right uppercase text-[10px] tracking-wider">
+                      Overall Total:
+                    </td>
+                    <td className="py-2.5 px-3.5 text-right font-mono font-black text-navy">{totalAllocated}</td>
+                    <td className="py-2.5 px-3.5 text-right font-mono font-black text-emerald-700">{totalClaimed}</td>
+                    <td className="py-2.5 px-3.5 text-right font-mono font-black text-amber-700">{totalUnclaimed}</td>
+                    <td className="py-2.5 px-3.5 text-right font-mono font-black text-blue-700">{pctClaimed}%</td>
+                  </tr>
+                </tfoot>
+              )}
+            </table>
+          </div>
+
+          {/* Sector Breakdown Table (if available) */}
+          {sectorData.length > 0 && (
+            <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+              <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
+                <span>Sector Distribution Breakdown</span>
+                <span className="text-slate-500 font-semibold text-[10px] normal-case">
+                  {sectorData.length} {sectorData.length === 1 ? 'sector' : 'sectors'}
+                </span>
+              </div>
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 text-[10px] text-slate-600 font-bold uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="py-2 px-3.5 w-10">#</th>
+                    <th className="py-2 px-3.5">Sector Classification</th>
+                    <th className="py-2 px-3.5 text-right w-24">Allocated</th>
+                    <th className="py-2 px-3.5 text-right w-24">Claimed</th>
+                    <th className="py-2 px-3.5 text-right w-24">Unclaimed</th>
+                    <th className="py-2 px-3.5 text-right w-28">Rate (%)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sectorData.map((s, idx) => {
+                    const rate = s.total > 0 ? Math.round((s.claimed / s.total) * 100) : 0
+                    return (
+                      <tr key={idx} className="hover:bg-slate-50/50">
+                        <td className="py-2 px-3.5 text-slate-500 font-mono text-[11px]">{idx + 1}</td>
+                        <td className="py-2 px-3.5 font-bold text-navy">{s.label}</td>
+                        <td className="py-2 px-3.5 text-right font-mono text-slate-700">{s.total}</td>
+                        <td className="py-2 px-3.5 text-right font-mono font-bold text-emerald-700">{s.claimed}</td>
+                        <td className="py-2 px-3.5 text-right font-mono font-bold text-amber-700">{s.unclaimed}</td>
+                        <td className="py-2 px-3.5 text-right">
+                          <span className="inline-block px-2 py-0.5 rounded font-bold font-mono text-[10px] bg-slate-100 text-slate-800 border border-slate-200">
+                            {rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Signature Sign-offs */}
+          <div className="pt-6 grid grid-cols-2 gap-8 text-center text-xs">
+            <div>
+              <div className="border-b border-slate-400 pb-1 h-8" />
+              <div className="font-bold text-navy mt-1.5">Prepared By</div>
+              <div className="text-[10px] text-slate-500">Relief Operations &amp; Monitoring Officer</div>
+            </div>
+            <div>
+              <div className="border-b border-slate-400 pb-1 h-8" />
+              <div className="font-bold text-navy mt-1.5">Attested &amp; Certified By</div>
+              <div className="text-[10px] text-slate-500">Punong Barangay / CDRRMO Representative</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Actions (Hidden in Print) */}
+        <div className="no-print mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <i className="fas fa-chart-pie text-blue-500" />
+            <span>Official DRRMO Relief Operations Summary Record</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="btn btn-outline btn-sm px-3.5 flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer font-semibold shadow-2xs"
+            >
+              <i className="fas fa-print" /> Print Report
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-gray btn-sm px-3.5 cursor-pointer font-medium"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  )
 }

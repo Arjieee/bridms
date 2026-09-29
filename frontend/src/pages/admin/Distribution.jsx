@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
@@ -37,16 +37,26 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print-slip"
+      className="modal-overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto print-slip"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="card p-6 sm:p-8 w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200"
+        className="card modal-box p-6 sm:p-8 w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative"
       >
+        {/* Close Button top-right */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="no-print absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
+          title="Close Receipt"
+        >
+          <i className="fas fa-times text-sm" />
+        </button>
+
         {/* Printable Voucher Section */}
-        <div id="distribution-slip-printable" className="space-y-5 text-slate-800">
+        <div id="distribution-slip-printable" className="space-y-4 text-slate-800">
           {/* Header */}
           <div className="text-center border-b pb-4 border-slate-200">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
@@ -60,58 +70,63 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
             </div>
           </div>
 
-          {/* Reference Meta Box */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Tracking Code</div>
-              <div className="font-mono font-black text-navy text-sm">{receipt.dist_code}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Distribution Date</div>
-              <div className="font-bold text-slate-700">{dateFormatted}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Event / Cycle</div>
-              <div className="font-bold text-navy truncate" title={receipt.cycle_name}>
-                {receipt.cycle_name || 'Standard Relief'}
+          {/* Reference Meta Box - Clear, Uncut, High-Contrast */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-2.5 border-b border-slate-200">
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Tracking Code</div>
+                <div className="font-mono font-black text-navy text-sm mt-0.5">{receipt.dist_code}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Distribution Date</div>
+                <div className="font-bold text-slate-800 text-xs mt-0.5">{dateFormatted}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Sector Classification</div>
+                <div className="font-bold text-blue-700 uppercase text-xs mt-0.5">
+                  {receipt.cycle_type || receipt.type || 'Household'}
+                </div>
               </div>
             </div>
+
+            {/* Event / Cycle Name - Fully visible without truncation */}
             <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Sector Type</div>
-              <div className="font-bold text-blue-700 uppercase">
-                {receipt.cycle_type || receipt.type || 'Household'}
+              <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Disaster Event / Relief Cycle</div>
+              <div className="font-bold text-navy text-sm mt-0.5 leading-snug break-words">
+                {receipt.cycle_name || 'Standard Barangay Relief Operations'}
               </div>
             </div>
           </div>
 
           {/* Beneficiary Details Box */}
-          <div className="border border-slate-200 rounded-xl p-3.5 text-xs space-y-2">
-            <div className="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-1 flex items-center justify-between">
+          <div className="border border-slate-200 rounded-xl p-4 text-xs space-y-2.5 bg-white">
+            <div className="font-bold text-slate-800 text-xs uppercase tracking-wider border-b border-slate-100 pb-1.5 flex items-center justify-between">
               <span>Beneficiary Information</span>
-              <span className="font-mono text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-100 font-bold">
-                {receipt.hh_code}
+              <span className="font-mono text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded border border-blue-100 font-bold text-[11px]">
+                HH Code: {receipt.hh_code || 'N/A'}
               </span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
-                <span className="text-slate-400">Household Head:</span>{' '}
-                <strong className="text-navy">
+                <span className="text-slate-500 font-medium">Household Head:</span>{' '}
+                <strong className="text-navy font-bold">
                   {receipt.head_fname ? `${receipt.head_fname} ${receipt.head_lname}` : (receipt.recipient_name || '—')}
                 </strong>
               </div>
               <div>
-                <span className="text-slate-400">Purok:</span>{' '}
-                <strong className="text-slate-700">{receipt.purok_name || 'Barangay Puerto'}</strong>
+                <span className="text-slate-500 font-medium">Purok / Location:</span>{' '}
+                <strong className="text-slate-800 font-bold">{receipt.purok_name || 'Barangay Puerto'}</strong>
               </div>
               <div className="sm:col-span-2">
-                <span className="text-slate-400">Physical Claimant (Received By):</span>{' '}
-                <strong className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                <span className="text-slate-500 font-medium">Physical Claimant (Received By):</span>{' '}
+                <strong className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
                   {receipt.recipient_name || receipt.member_name || (receipt.head_fname ? `${receipt.head_fname} ${receipt.head_lname}` : 'Beneficiary')}
                 </strong>
               </div>
               {receipt.special_reason && (
-                <div className="sm:col-span-2 text-amber-800 bg-amber-50/70 p-2 rounded border border-amber-200">
-                  <span className="font-bold">Reason for Special Relief:</span> {receipt.special_reason}
+                <div className="sm:col-span-2 text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200 leading-relaxed">
+                  <span className="font-bold uppercase text-[10px] tracking-wide block mb-0.5 text-amber-800">Reason for Special Relief:</span>
+                  <span className="font-medium text-xs break-words">{receipt.special_reason}</span>
                 </div>
               )}
             </div>
@@ -119,27 +134,38 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
 
           {/* Itemized Table */}
           <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
-            <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-700 uppercase tracking-wider text-[11px] border-b border-slate-200">
-              Relief Package Breakdown
+            <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
+              <span>Relief Package Breakdown</span>
+              <span className="text-slate-500 font-semibold text-[10px] normal-case">
+                {items.length} {items.length === 1 ? 'item' : 'items'} total
+              </span>
             </div>
             <table className="w-full text-left">
-              <thead className="bg-slate-50 text-[10px] text-slate-500 font-bold uppercase border-b border-slate-200">
+              <thead className="bg-slate-50 text-[10px] text-slate-600 font-bold uppercase border-b border-slate-200">
                 <tr>
-                  <th className="py-2 px-3.5 w-10">#</th>
-                  <th className="py-2 px-3.5">Item Description</th>
-                  <th className="py-2 px-3.5 text-right w-24">Quantity</th>
-                  <th className="py-2 px-3.5 w-24">Unit</th>
+                  <th className="py-2.5 px-3.5 w-10">#</th>
+                  <th className="py-2.5 px-3.5">Item Description</th>
+                  <th className="py-2.5 px-3.5 text-right w-24">Quantity</th>
+                  <th className="py-2.5 px-3.5 w-24">Unit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {items.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-2 px-3.5 text-slate-400 font-mono">{idx + 1}</td>
-                    <td className="py-2 px-3.5 font-bold text-navy">{item.item_name}</td>
-                    <td className="py-2 px-3.5 text-right font-extrabold text-navy font-mono">{item.quantity}</td>
-                    <td className="py-2 px-3.5 text-slate-600">{item.unit}</td>
+                {items.length > 0 ? (
+                  items.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3.5 text-slate-500 font-mono">{idx + 1}</td>
+                      <td className="py-2.5 px-3.5 font-bold text-navy">{item.item_name}</td>
+                      <td className="py-2.5 px-3.5 text-right font-black text-navy font-mono text-xs">{item.quantity}</td>
+                      <td className="py-2.5 px-3.5 text-slate-700 font-medium">{item.unit}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="py-4 px-3.5 text-center text-slate-500 italic">
+                      No relief package items specified.
+                    </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -152,9 +178,7 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
               <div className="text-[10px] text-slate-400">Signature over printed name</div>
             </div>
             <div>
-              <div className="border-b border-slate-400 pb-1 h-8 flex items-end justify-center font-bold text-navy text-[11px]">
-                {receipt.recorded_by || 'Barangay Relief Officer'}
-              </div>
+              <div className="border-b border-slate-400 pb-1 h-8" />
               <div className="font-bold text-navy mt-1">Issuing Barangay Officer</div>
               <div className="text-[10px] text-slate-400">Authorized Disaster Response Staff</div>
             </div>
@@ -164,24 +188,30 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
         {/* Modal Actions (Hidden in Print) */}
         <div className="no-print mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
-            <i className="fas fa-circle-check text-emerald-500" />
-            <span>Distribution &amp; Stock Ledger successfully updated.</span>
+            <i className={`fas ${receipt.is_reprint ? 'fa-clock-rotate-left text-blue-500' : 'fa-circle-check text-emerald-500'}`} />
+            <span>
+              {receipt.is_reprint
+                ? 'Historical Distribution Record Archive'
+                : 'Distribution & Stock Ledger successfully updated.'}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={handlePrint}
-              className="btn btn-outline btn-sm px-3 flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer"
+              className="btn btn-outline btn-sm px-3 flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer font-semibold shadow-2xs"
             >
               <i className="fas fa-print" /> Print Slip
             </button>
-            <button
-              type="button"
-              onClick={onDistributeNext}
-              className="btn btn-primary btn-sm px-3.5 flex items-center gap-1.5 shadow-sm cursor-pointer"
-            >
-              <i className="fas fa-user-plus" /> Next Resident
-            </button>
+            {onDistributeNext && (
+              <button
+                type="button"
+                onClick={onDistributeNext}
+                className="btn btn-primary btn-sm px-3.5 flex items-center gap-1.5 shadow-sm cursor-pointer font-semibold"
+              >
+                <i className="fas fa-user-plus" /> Next Resident
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}
@@ -225,51 +255,49 @@ function DeskDistributionModal({
   const [repName, setRepName] = useState('')
   const [repRelation, setRepRelation] = useState('')
   const [selectedCycleId, setSelectedCycleId] = useState('')
-  const [isSpecial, setIsSpecial] = useState(false)
-  const [specialReason, setSpecialReason] = useState('')
   const [distDate, setDistDate] = useState(new Date().toISOString().split('T')[0])
   const [pkgItems, setPkgItems] = useState([])
   const [remarks, setRemarks] = useState('')
   const [newItemId, setNewItemId] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Handle prefill if passed from other page
-  useEffect(() => {
-    if (initialPrefillHhId && households.length > 0) {
-      const match = households.find(
-        h => h.id === initialPrefillHhId || h.hh_code === initialPrefillHhId
-      )
-      if (match) {
-        handleSelectHousehold(match)
-      }
-    }
-  }, [initialPrefillHhId, households])
-
   // Active cycles list
   const activeCycles = useMemo(() => {
     return (cycles || []).filter(c => c.is_active)
   }, [cycles])
 
-  // Helper to load package items based on sector / cycle
-  const loadPackageForHousehold = (hh, cycleId = null, forceSpecial = false) => {
-    const memberSectors = (hh.members || []).flatMap(m => m.sectors || (m.sector ? [m.sector] : []))
-    const primarySector = memberSectors[0] || selectedSectorType || 'household'
+  // Helper to load package items based on sector / cycle and bind to real inventory
+  const loadPackageForHousehold = (hh, cycleId = null) => {
+    const cyc = cycleId
+      ? cycles.find(c => c.id === cycleId)
+      : (activeCycles.find(c => c.type === selectedSectorType) || activeCycles[0])
 
-    if (forceSpecial) {
-      const template = standardPackages[primarySector] || standardPackages['household'] || []
-      setPkgItems(template.map(p => ({ ...p })))
-      return
-    }
+    const memberSectors = (hh?.members || []).flatMap(m => m.sectors || (m.sector ? [m.sector] : []))
+    const primarySector = cyc?.type || memberSectors[0] || selectedSectorType || 'household'
 
-    const cyc = cycleId ? cycles.find(c => c.id === cycleId) : activeCycles.find(c => c.type === primarySector || c.type === 'household')
+    let template = []
     if (cyc?.items && cyc.items.length > 0) {
-      setPkgItems(cyc.items.map(p => ({ ...p })))
-    } else if (cyc?.type && standardPackages[cyc.type]) {
-      setPkgItems(standardPackages[cyc.type].map(p => ({ ...p })))
+      template = cyc.items
+    } else if (standardPackages[primarySector] && standardPackages[primarySector].length > 0) {
+      template = standardPackages[primarySector]
     } else {
-      const template = standardPackages[primarySector] || standardPackages['household'] || []
-      setPkgItems(template.map(p => ({ ...p })))
+      template = standardPackages['household'] || []
     }
+
+    const resolved = (template || []).map(p => {
+      const invMatch = inventory.find(inv =>
+        (p.item_id && inv.id === p.item_id) ||
+        (inv.name.toLowerCase() === (p.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (p.unit || '').toLowerCase()) ||
+        inv.name.toLowerCase() === (p.item_name || '').toLowerCase()
+      )
+      return {
+        item_id: invMatch ? invMatch.id : p.item_id,
+        item_name: invMatch ? invMatch.name : p.item_name,
+        quantity: p.quantity ?? 1,
+        unit: invMatch ? invMatch.unit : p.unit,
+      }
+    })
+    setPkgItems(resolved)
   }
 
   // Select household handler
@@ -288,18 +316,28 @@ function DeskDistributionModal({
     const memberSectors = (hh.members || []).flatMap(m => m.sectors || (m.sector ? [m.sector] : []))
     const matchingCycle = activeCycles.find(
       c => c.type === selectedSectorType || memberSectors.includes(c.type) || c.type === 'household'
-    )
+    ) || activeCycles[0]
 
     if (matchingCycle) {
       setSelectedCycleId(matchingCycle.id)
-      setIsSpecial(false)
-      loadPackageForHousehold(hh, matchingCycle.id, false)
+      loadPackageForHousehold(hh, matchingCycle.id)
     } else {
       setSelectedCycleId('')
-      setIsSpecial(true)
-      loadPackageForHousehold(hh, null, true)
+      setPkgItems([])
     }
   }
+
+  // Handle prefill if passed from other page
+  useEffect(() => {
+    if (initialPrefillHhId && households.length > 0) {
+      const match = households.find(
+        h => h.id === initialPrefillHhId || h.hh_code === initialPrefillHhId
+      )
+      if (match) {
+        handleSelectHousehold(match)
+      }
+    }
+  }, [initialPrefillHhId, households])
 
   // Search filtered households
   const searchResults = useMemo(() => {
@@ -319,8 +357,14 @@ function DeskDistributionModal({
     }).slice(0, 10)
   }, [households, searchQuery, selectedPurokFilter, selectedHH])
 
-  // Check if household has already claimed in the chosen cycle
-  const targetCycle = isSpecial ? null : (selectedCycleId ? cycles.find(c => c.id === selectedCycleId) : null)
+  // Target Cycle and Double Claim Check
+  const targetCycle = useMemo(() => {
+    if (selectedCycleId) {
+      return cycles.find(c => c.id === selectedCycleId)
+    }
+    return activeCycles[0] || null
+  }, [selectedCycleId, cycles, activeCycles])
+
   const existingClaim = useMemo(() => {
     if (!selectedHH || !targetCycle) return null
     return distributions.find(
@@ -332,11 +376,11 @@ function DeskDistributionModal({
   const nonHeadMembers = (selectedHH?.members || []).filter(m => m.id !== head?.id)
 
   // Validation
+  const hasActiveCycle = activeCycles.length > 0 && Boolean(targetCycle?.id)
   const hasItems = pkgItems.length > 0 && pkgItems.some(i => (parseFloat(i.quantity) || 0) > 0)
-  const isBlockedByDoubleClaim = Boolean(existingClaim && !isSpecial)
+  const isBlockedByDoubleClaim = Boolean(existingClaim)
   const isRepValid = claimantType !== 'rep' || Boolean(repName.trim())
-  const isSpecialValid = !isSpecial || Boolean(specialReason.trim())
-  const canSubmit = selectedHH && hasItems && !isBlockedByDoubleClaim && isRepValid && isSpecialValid && !submitting
+  const canSubmit = selectedHH && hasActiveCycle && hasItems && !isBlockedByDoubleClaim && isRepValid && !submitting
 
   // Form submission
   const handleSubmit = async (e) => {
@@ -364,25 +408,32 @@ function DeskDistributionModal({
       remarks.trim() ? remarks.trim() : null,
     ].filter(Boolean).join(' · ')
 
-    const itemsToDistribute = pkgItems.map(i => ({
-      item_id: i.item_id,
-      item_name: i.item_name,
-      quantity: parseFloat(i.quantity) || 1,
-      unit: i.unit,
-    }))
+    const itemsToDistribute = pkgItems.map(i => {
+      const invMatch = inventory.find(inv =>
+        (i.item_id && inv.id === i.item_id) ||
+        (inv.name.toLowerCase() === (i.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (i.unit || '').toLowerCase()) ||
+        inv.name.toLowerCase() === (i.item_name || '').toLowerCase()
+      )
+      return {
+        item_id: invMatch ? invMatch.id : i.item_id,
+        item_name: invMatch ? invMatch.name : i.item_name,
+        quantity: parseFloat(i.quantity) || 1,
+        unit: invMatch ? invMatch.unit : i.unit,
+      }
+    })
 
     setSubmitting(true)
     const res = await addManualDistribution({
-      cycle_id: isSpecial ? null : targetCycle?.id,
+      cycle_id: targetCycle.id,
       household_id: selectedHH.id,
       member_id: memberIdToPass,
       dist_date: distDate,
       officials: [{ name: user?.full_name || user?.username || 'Relief Officer' }],
       items: itemsToDistribute,
-      type: isSpecial ? 'special_assistance' : 'standard',
-      special_reason: isSpecial ? specialReason.trim() : null,
+      type: 'standard',
+      special_reason: null,
       remarks: finalRemarks,
-      type_filter: isSpecial ? 'emergency' : (targetCycle?.type || selectedSectorType || 'household'),
+      type_filter: targetCycle?.type || selectedSectorType || 'household',
     })
     setSubmitting(false)
 
@@ -397,10 +448,10 @@ function DeskDistributionModal({
         head_lname: head?.lname,
         recipient_name: recipientDesc,
         items: itemsToDistribute,
-        cycle_name: isSpecial ? 'Special / Emergency Assistance' : (targetCycle?.name || 'Relief Distribution'),
-        cycle_type: isSpecial ? 'Emergency' : (targetCycle?.type || selectedSectorType || 'Household'),
+        cycle_name: targetCycle?.name || 'Relief Distribution',
+        cycle_type: targetCycle?.type || selectedSectorType || 'Household',
         dist_date: distDate,
-        special_reason: isSpecial ? specialReason : null,
+        special_reason: null,
         remarks: finalRemarks,
         recorded_by: user?.full_name || user?.username || 'Staff',
       })
@@ -436,7 +487,7 @@ function DeskDistributionModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg text-slate-400 hover:text-navy hover:bg-slate-100 flex items-center justify-center transition-colors"
+            className="w-8 h-8 rounded-lg text-slate-400 hover:text-navy hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
           >
             <i className="fas fa-xmark text-sm" />
           </button>
@@ -470,7 +521,7 @@ function DeskDistributionModal({
                   <button
                     type="button"
                     onClick={() => setSelectedPurokFilter('')}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors cursor-pointer ${
                       !selectedPurokFilter ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-600 border-slate-200'
                     }`}
                   >
@@ -481,7 +532,7 @@ function DeskDistributionModal({
                       key={p.id}
                       type="button"
                       onClick={() => setSelectedPurokFilter(String(p.id))}
-                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors ${
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border transition-colors cursor-pointer ${
                         selectedPurokFilter === String(p.id) ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-600 border-slate-200'
                       }`}
                     >
@@ -563,7 +614,7 @@ function DeskDistributionModal({
                     setSearchQuery('')
                     setPkgItems([])
                   }}
-                  className="btn btn-outline btn-xs px-2.5 py-1 text-slate-600 border-slate-200 hover:bg-slate-200"
+                  className="btn btn-outline btn-xs px-2.5 py-1 text-slate-600 border-slate-200 hover:bg-slate-200 cursor-pointer"
                 >
                   <i className="fas fa-rotate mr-1" /> Change Resident
                 </button>
@@ -574,46 +625,36 @@ function DeskDistributionModal({
           {/* STEP 2 & 3: Once Household is Selected */}
           {selectedHH && (
             <>
-              {/* Eligibility & Double-Claim Guard Banner */}
-              {isSpecial ? (
-                <div className="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs space-y-1">
-                  <div className="flex items-center justify-between font-bold text-amber-900">
-                    <span className="flex items-center gap-1.5">
-                      <i className="fas fa-bolt text-amber-600" /> Special Assistance / Emergency Distribution
-                    </span>
-                    <span className="badge badge-pending text-[10px]">Special Mode</span>
+              {/* Check if no active cycles */}
+              {activeCycles.length === 0 ? (
+                <div className="p-4 bg-amber-50 border border-amber-300 rounded-xl text-xs space-y-2 text-amber-900">
+                  <div className="flex items-center gap-2 font-bold text-amber-950 text-sm">
+                    <i className="fas fa-triangle-exclamation text-amber-600" />
+                    <span>No Active Distribution Cycle</span>
                   </div>
-                  <p className="text-amber-800 text-[11px]">
-                    This distribution is decoupled from regular scheduled cycles to fulfill urgent disaster or emergency relief.
+                  <p className="text-amber-800 leading-relaxed">
+                    Relief distribution is currently unavailable because there is no active distribution cycle. Every official relief distribution must be assigned to an active cycle for inventory reconciliation, auditing, and double-claim prevention.
                   </p>
+                  <div className="text-[11px] text-amber-700 font-semibold">
+                    Please go to <strong>Settings &gt; Distribution Cycles</strong> to activate or create a cycle before issuing relief goods.
+                  </div>
                 </div>
               ) : existingClaim ? (
-                /* High Visibility Double-Claim Warning */
-                <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs space-y-2">
-                  <div className="flex items-center justify-between font-bold text-red-900">
-                    <span className="flex items-center gap-1.5 text-sm">
-                      <i className="fas fa-triangle-exclamation text-red-600" />
+                /* High Visibility Double-Claim Blocker Warning */
+                <div className="p-3.5 bg-red-50 border border-red-300 rounded-xl text-xs space-y-1.5 text-red-900">
+                  <div className="flex items-center justify-between font-bold text-red-950">
+                    <span className="flex items-center gap-2 text-sm">
+                      <i className="fas fa-circle-xmark text-red-600" />
                       ALREADY RECEIVED RELIEF FOR THIS CYCLE
                     </span>
                     <span className="badge badge-critical text-[10px]">Already Claimed</span>
                   </div>
                   <p className="text-red-800 leading-snug">
-                    This household already claimed relief for <strong>{targetCycle?.name}</strong> on <strong>{existingClaim.dist_date}</strong>.
-                    {existingClaim.dist_code && ` (Tracking Code: ${existingClaim.dist_code})`}.
+                    This household already claimed relief goods for <strong>{targetCycle?.name}</strong> on <strong>{existingClaim.dist_date}</strong>
+                    {existingClaim.dist_code ? ` (Tracking: ${existingClaim.dist_code})` : ''}.
                   </p>
-                  <div className="pt-1 flex items-center gap-2">
-                    <label className="flex items-center gap-2 font-bold text-red-950 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={isSpecial}
-                        onChange={e => {
-                          setIsSpecial(e.target.checked)
-                          loadPackageForHousehold(selectedHH, null, e.target.checked)
-                        }}
-                        className="rounded border-red-300 text-red-600"
-                      />
-                      <span>Authorize Emergency / Special Assistance Override</span>
-                    </label>
+                  <div className="text-[11px] font-semibold text-red-700">
+                    Double-claiming within the same distribution cycle is strictly prohibited.
                   </div>
                 </div>
               ) : (
@@ -636,52 +677,30 @@ function DeskDistributionModal({
                 </div>
               )}
 
-              {/* Distribution Cycle Selection & Override Option */}
+              {/* Distribution Cycle Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="font-bold text-slate-700">Distribution Cycle</label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = !isSpecial
-                        setIsSpecial(next)
-                        loadPackageForHousehold(selectedHH, next ? null : selectedCycleId, next)
-                      }}
-                      className="text-[10px] text-blue-600 font-semibold hover:underline"
-                    >
-                      {isSpecial ? 'Switch to Scheduled Cycle' : 'Switch to Special Relief'}
-                    </button>
-                  </div>
-                  {!isSpecial ? (
-                    <select
-                      className="form-input text-xs py-2 rounded-xl w-full"
-                      value={selectedCycleId}
-                      onChange={e => {
-                        const val = e.target.value
-                        setSelectedCycleId(val)
-                        loadPackageForHousehold(selectedHH, val, false)
-                      }}
-                    >
-                      {activeCycles.length === 0 ? (
-                        <option value="" disabled>-- No active cycles found --</option>
-                      ) : (
-                        <option value="">-- Select Active Cycle --</option>
-                      )}
-                      {activeCycles.map(c => (
+                  <label className="font-bold text-slate-700 block mb-1">Distribution Cycle *</label>
+                  <select
+                    className="form-input text-xs py-2 rounded-xl w-full"
+                    value={selectedCycleId}
+                    onChange={e => {
+                      const val = e.target.value
+                      setSelectedCycleId(val)
+                      loadPackageForHousehold(selectedHH, val)
+                    }}
+                    disabled={activeCycles.length === 0}
+                  >
+                    {activeCycles.length === 0 ? (
+                      <option value="" disabled>-- No active cycles found --</option>
+                    ) : (
+                      activeCycles.map(c => (
                         <option key={c.id} value={c.id}>
                           {c.name} ({c.type.toUpperCase()})
                         </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      className="form-input text-xs py-2 rounded-xl w-full bg-slate-100 font-semibold text-slate-600"
-                      disabled
-                      value="Special Assistance / Emergency Distribution"
-                    />
-                  )}
+                      ))
+                    )}
+                  </select>
                 </div>
 
                 <div>
@@ -695,23 +714,6 @@ function DeskDistributionModal({
                   />
                 </div>
               </div>
-
-              {/* Special Reason Input if isSpecial */}
-              {isSpecial && (
-                <div>
-                  <label className="font-bold text-amber-900 block mb-1">
-                    Reason for Special / Emergency Relief *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Typhoon victim, fire emergency, urgent medical need..."
-                    className="form-input text-xs py-2 rounded-xl w-full border-amber-200 bg-amber-50/50"
-                    value={specialReason}
-                    onChange={e => setSpecialReason(e.target.value)}
-                  />
-                </div>
-              )}
 
               {/* Physical Recipient / Claimant Selector */}
               <div>
@@ -821,48 +823,63 @@ function DeskDistributionModal({
               {/* STEP 3: Relief Package Items with Live Warehouse Inventory Check */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="font-bold text-slate-700">
-                    Relief Goods Package Breakdown ({pkgItems.length} items) *
-                  </label>
+                  <div>
+                    <label className="font-bold text-slate-700">
+                      Relief Goods Package Breakdown ({pkgItems.length} items) *
+                    </label>
+                    <span className="text-[10px] text-slate-400 block">Pre-filled from Admin Standard Template</span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => loadPackageForHousehold(selectedHH, selectedCycleId, isSpecial)}
+                    onClick={() => loadPackageForHousehold(selectedHH, selectedCycleId)}
                     className="text-[11px] text-blue-600 hover:text-blue-800 font-semibold underline flex items-center gap-1 cursor-pointer"
                   >
-                    <i className="fas fa-rotate text-[10px]" /> Reload Template
+                    <i className="fas fa-rotate text-[10px]" /> Reset to Template
                   </button>
                 </div>
 
                 {pkgItems.length === 0 ? (
                   <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400">
-                    No items in this package yet. Use the dropdown below to add relief goods.
+                    No items in this package yet. Use the dropdown below to add relief goods from warehouse stock.
                   </div>
                 ) : (
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                     {pkgItems.map((item, idx) => {
                       const invMatch = inventory.find(
-                        inv => String(inv.id) === String(item.item_id) || inv.name.toLowerCase() === item.item_name.toLowerCase()
+                        inv => (item.item_id && inv.id === item.item_id) ||
+                               (inv.name.toLowerCase() === item.item_name.toLowerCase() && inv.unit.toLowerCase() === (item.unit || '').toLowerCase()) ||
+                               inv.name.toLowerCase() === item.item_name.toLowerCase()
                       )
                       const stockAvailable = invMatch ? invMatch.quantity : 0
-                      const isLow = stockAvailable < (parseFloat(item.quantity) || 0)
+                      const isOutOfStock = stockAvailable <= 0
+                      const isLow = !isOutOfStock && stockAvailable < (parseFloat(item.quantity) || 0)
 
                       return (
                         <div
                           key={idx}
-                          className="flex items-center justify-between gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs"
+                          className={`flex items-center justify-between gap-2 p-2 rounded-xl border text-xs ${
+                            isOutOfStock ? 'bg-red-50/60 border-red-200' : isLow ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'
+                          }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-navy truncate">{item.item_name}</div>
+                            <div className="font-bold text-navy truncate flex items-center gap-1">
+                              <span>{item.item_name}</span>
+                              {isOutOfStock && (
+                                <span className="text-[9px] font-bold px-1 rounded bg-red-100 text-red-700">Out of Stock</span>
+                              )}
+                            </div>
                             <div className="text-[10px] mt-0.5">
-                              {isLow ? (
+                              {isOutOfStock ? (
                                 <span className="text-red-600 font-bold flex items-center gap-1">
-                                  <i className="fas fa-triangle-exclamation" />
-                                  Only {stockAvailable} {item.unit} in warehouse!
+                                  <i className="fas fa-triangle-exclamation" /> 0 {item.unit} in warehouse!
+                                </span>
+                              ) : isLow ? (
+                                <span className="text-amber-700 font-bold flex items-center gap-1">
+                                  <i className="fas fa-triangle-exclamation" /> Only {stockAvailable} {item.unit} in warehouse!
                                 </span>
                               ) : (
                                 <span className="text-emerald-700 font-medium flex items-center gap-1">
-                                  <i className="fas fa-circle-check text-emerald-500" />
-                                  {stockAvailable} {item.unit} in stock
+                                  <i className="fas fa-circle-check text-emerald-500" /> {stockAvailable} {item.unit} in stock
                                 </span>
                               )}
                             </div>
@@ -883,7 +900,7 @@ function DeskDistributionModal({
                             <button
                               type="button"
                               onClick={() => setPkgItems(p => p.filter((_, i) => i !== idx))}
-                              className="w-7 h-7 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors"
+                              className="w-7 h-7 rounded-lg text-red-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer"
                             >
                               <i className="fas fa-trash text-xs" />
                             </button>
@@ -904,7 +921,10 @@ function DeskDistributionModal({
                       if (!id) return
                       const invItem = inventory.find(inv => String(inv.id) === String(id))
                       if (invItem) {
-                        const existingIdx = pkgItems.findIndex(it => String(it.item_id) === String(invItem.id))
+                        const existingIdx = pkgItems.findIndex(it =>
+                          String(it.item_id) === String(invItem.id) ||
+                          (it.item_name.toLowerCase() === invItem.name.toLowerCase() && it.unit.toLowerCase() === invItem.unit.toLowerCase())
+                        )
                         if (existingIdx >= 0) {
                           setPkgItems(p => p.map((it, i) => i === existingIdx ? { ...it, quantity: Number(it.quantity) + 1 } : it))
                         } else {
@@ -931,7 +951,7 @@ function DeskDistributionModal({
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Distributed during emergency Barangay assembly"
+                  placeholder="e.g. Distributed during regular Barangay relief assembly"
                   className="form-input text-xs py-1.5 rounded-xl w-full"
                   value={remarks}
                   onChange={e => setRemarks(e.target.value)}
@@ -946,14 +966,14 @@ function DeskDistributionModal({
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="btn btn-gray btn-xs px-4"
+              className="btn btn-gray btn-xs px-4 cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canSubmit || submitting}
-              className="btn btn-primary btn-xs px-4 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
+              className="btn btn-primary btn-xs px-4 flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed shadow-xs cursor-pointer"
             >
               {submitting ? (
                 <>
@@ -976,6 +996,7 @@ function DeskDistributionModal({
 
 export default function AdminDistribution() {
   const location = useLocation()
+  const navigate = useNavigate()
   const {
     distributions,
     cycles,
@@ -996,6 +1017,8 @@ export default function AdminDistribution() {
   const [completedReceipt, setCompletedReceipt] = useState(null)
   const [prefillHhId, setPrefillHhId] = useState(null)
   const [sectorForm, setSectorForm] = useState({ name: '', code: '', color: '#1a56db', icon: 'fa-tag' })
+
+  const isAdmin = user?.role === 'admin'
 
   // Handle prefill if routed with state
   useEffect(() => {
@@ -1115,6 +1138,17 @@ export default function AdminDistribution() {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => navigate('/admin/settings?tab=packages')}
+              className="btn btn-outline btn-sm cursor-pointer flex items-center gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50"
+              title="Manage baseline relief package templates in Admin Settings"
+            >
+              <i className="fas fa-boxes-packing text-blue-600" />
+              <span className="hidden sm:inline">Package Templates</span>
+            </button>
+          )}
           <button onClick={() => setShowAddSector(true)} className="btn btn-outline btn-sm cursor-pointer">
             <i className="fas fa-plus" /> <span className="hidden sm:inline">Add Sector</span>
           </button>
@@ -1247,12 +1281,12 @@ export default function AdminDistribution() {
           <table className="tbl w-full table-fixed">
             <thead>
               <tr>
-                <th className="w-[13%]">Code</th>
-                <th className="w-[23%]">Head / Beneficiary</th>
+                <th className="w-[12%]">Code</th>
+                <th className="w-[22%]">Head / Beneficiary</th>
                 <th className="w-[9%]">Purok</th>
-                <th className="w-[10%]">Date</th>
-                <th className="w-[9%]">Type</th>
-                <th className="w-[36%]">Details</th>
+                <th className="w-[9%]">Date</th>
+                <th className="w-[8%]">Type</th>
+                <th className="w-[40%]">Details &amp; Receipt</th>
               </tr>
             </thead>
             <tbody>
@@ -1278,15 +1312,33 @@ export default function AdminDistribution() {
                       {r.type === 'special_assistance' ? 'Special' : 'Standard'}
                     </span>
                   </td>
-                  <td data-label="Details">
-                    <div className="text-[11px] text-slate-600 leading-normal">
-                      {r.items?.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')}
-                    </div>
-                    {r.special_reason && (
-                      <div className="text-[10px] text-amber-700 italic mt-0.5">
-                        Reason: {r.special_reason}
+                  <td data-label="Details & Receipt">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className="text-[11px] text-slate-700 font-medium leading-normal line-clamp-2"
+                          title={r.items?.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')}
+                        >
+                          {r.items?.length > 0
+                            ? r.items.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')
+                            : 'No package items logged'}
+                        </div>
+                        {r.special_reason && (
+                          <div className="text-[10px] text-amber-700 italic mt-0.5 truncate" title={r.special_reason}>
+                            Reason: {r.special_reason}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <button
+                        type="button"
+                        onClick={() => setCompletedReceipt({ ...r, is_reprint: true })}
+                        className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1.5 rounded-lg flex-shrink-0 cursor-pointer font-bold transition-all shadow-2xs group"
+                        title="View and reprint official acknowledgment receipt slip"
+                      >
+                        <i className="fas fa-receipt text-xs group-hover:scale-110 transition-transform" />
+                        <span>Receipt</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -1326,11 +1378,15 @@ export default function AdminDistribution() {
         <DistributionSlipModal
           receipt={completedReceipt}
           onClose={() => setCompletedReceipt(null)}
-          onDistributeNext={() => {
-            setCompletedReceipt(null)
-            setPrefillHhId(null)
-            setShowAdd(true)
-          }}
+          onDistributeNext={
+            completedReceipt.is_reprint
+              ? null
+              : () => {
+                  setCompletedReceipt(null)
+                  setPrefillHhId(null)
+                  setShowAdd(true)
+                }
+          }
         />
       )}
 

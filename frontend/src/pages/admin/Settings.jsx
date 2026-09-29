@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
@@ -11,6 +11,7 @@ const TABS = [
   { key: 'registrations', label: 'Registrations', icon: 'fa-clipboard-check' },
   { key: 'accounts',      label: 'Accounts',      icon: 'fa-users' },
   { key: 'cycles',        label: 'Cycles',        icon: 'fa-rotate' },
+  { key: 'packages',      label: 'Relief Packages', icon: 'fa-boxes-packing' },
   { key: 'puroks',        label: 'Puroks',        icon: 'fa-map' },
   { key: 'activity',      label: 'Activity',      icon: 'fa-list-ul' },
 ]
@@ -48,7 +49,7 @@ export default function AdminSettings() {
   const {
     pendingRegistrations, accounts, cycles, puroks, sectors, activityLogs, qrCodes, households, inventory, standardPackages,
     approveRegistration, rejectRegistration, createCycle, deactivateCycle, reactivateCycle,
-    addPurok, updatePurok, deletePurok, restorePurok, addStaffAccount,
+    addPurok, updatePurok, deletePurok, restorePurok, addStaffAccount, updateStandardPackage,
   } = useAppStore()
 
   const [tab, setTab] = useState(initialTab)
@@ -90,6 +91,111 @@ export default function AdminSettings() {
   const [selectedInvItemId, setSelectedInvItemId] = useState('')
   const [selectedInvItemQty, setSelectedInvItemQty] = useState('1')
   const [staffForm, setStaffForm] = useState({ full_name: '', username: '', password: '', confirm: '', email: '', contact: '' })
+
+  // Standard Package Templates state
+  const [pkgSector, setPkgSector] = useState('household')
+  const [pkgItems, setPkgItems] = useState([])
+  const [pkgSaving, setPkgSaving] = useState(false)
+  const [pkgNewItemId, setPkgNewItemId] = useState('')
+
+  const ALL_PACKAGE_SECTORS = useMemo(() => [
+    { code: 'household', name: 'General Household', icon: 'fa-house', color: '#1a56db' },
+    { code: 'pwd', name: 'PWD', icon: 'fa-wheelchair', color: '#7c3aed' },
+    { code: 'senior', name: 'Senior Citizen', icon: 'fa-person-cane', color: '#f59e0b' },
+    { code: 'osy', name: 'Out-of-School Youth', icon: 'fa-graduation-cap', color: '#10b981' },
+    { code: 'solo_parent', name: 'Solo Parent', icon: 'fa-person', color: '#ec4899' },
+    { code: 'teenage_mom', name: 'Teenage Mother', icon: 'fa-baby', color: '#ef4444' },
+    { code: 'emergency', name: 'Emergency Relief', icon: 'fa-bolt', color: '#dc2626' },
+    ...(sectors || []).filter(s => !['household','pwd','senior','osy','solo_parent','teenage_mom','emergency'].includes(s.code)).map(s => ({
+      code: s.code,
+      name: s.name,
+      icon: s.icon || 'fa-tag',
+      color: s.color || '#64748b',
+    })),
+  ], [sectors])
+
+  const activePkgSectorObj = ALL_PACKAGE_SECTORS.find(s => s.code === pkgSector)
+
+  // Load package items whenever pkgSector, standardPackages, or inventory changes
+  useEffect(() => {
+    const rawItems = standardPackages[pkgSector] || standardPackages['household'] || []
+    const resolved = rawItems.map(p => {
+      const invMatch = (inventory || []).find(inv =>
+        (p.item_id && inv.id === p.item_id) ||
+        (inv.name.toLowerCase() === (p.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (p.unit || '').toLowerCase()) ||
+        inv.name.toLowerCase() === (p.item_name || '').toLowerCase()
+      )
+      return {
+        item_id: invMatch ? invMatch.id : p.item_id,
+        item_name: invMatch ? invMatch.name : p.item_name,
+        quantity: p.quantity ?? 1,
+        unit: invMatch ? invMatch.unit : p.unit,
+      }
+    })
+    setPkgItems(resolved)
+  }, [pkgSector, standardPackages, inventory])
+
+  // Sync tab with searchParams if navigated with ?tab=packages
+  useEffect(() => {
+    const urlTab = searchParams.get('tab')
+    if (urlTab) {
+      setTab(urlTab)
+    }
+  }, [searchParams])
+
+  const handlePkgAddItem = (invId) => {
+    if (!invId) return
+    const invItem = (inventory || []).find(i => String(i.id) === String(invId))
+    if (!invItem) return
+
+    setPkgItems(prev => {
+      const existingIdx = prev.findIndex(p =>
+        String(p.item_id) === String(invItem.id) ||
+        (p.item_name.toLowerCase() === invItem.name.toLowerCase() && p.unit.toLowerCase() === invItem.unit.toLowerCase())
+      )
+      if (existingIdx >= 0) {
+        return prev.map((p, idx) => idx === existingIdx ? { ...p, quantity: Number(p.quantity) + 1 } : p)
+      }
+      return [...prev, {
+        item_id: invItem.id,
+        item_name: invItem.name,
+        quantity: 1,
+        unit: invItem.unit,
+      }]
+    })
+    setPkgNewItemId('')
+  }
+
+  const handlePkgUpdateQty = (idx, val) => {
+    setPkgItems(prev => prev.map((p, i) => i === idx ? { ...p, quantity: val } : p))
+  }
+
+  const handlePkgRemoveItem = (idx) => {
+    setPkgItems(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  const handleSavePackageTemplate = async () => {
+    if (pkgItems.length === 0) {
+      toast.error('Standard package must contain at least 1 relief item.')
+      return
+    }
+
+    const invalidItem = pkgItems.find(i => !i.item_name || (parseFloat(i.quantity) || 0) <= 0)
+    if (invalidItem) {
+      toast.error('All items must have a valid quantity greater than 0.')
+      return
+    }
+
+    setPkgSaving(true)
+    const res = await updateStandardPackage(pkgSector, pkgItems)
+    setPkgSaving(false)
+
+    if (res?.ok) {
+      toast.success(`Standard Package for "${activePkgSectorObj?.name || pkgSector}" saved! All staff accounts will now use this default package.`)
+    } else {
+      toast.error(res?.message || 'Failed to save standard package.')
+    }
+  }
 
   const safeAccounts = accounts || []
   const safeHouseholds = households || []
@@ -736,6 +842,220 @@ export default function AdminSettings() {
                 </div>
               )
             })}
+          </div>
+        )}
+
+        {tab === 'packages' && (
+          <div className="space-y-4">
+            {/* Top Overview Banner Card */}
+            <div className="card p-5 bg-gradient-to-r from-blue-900 to-navy text-white relative overflow-hidden shadow-sm">
+              <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/10 text-white/90 text-[10px] font-bold uppercase tracking-wider border border-white/15">
+                    <i className="fas fa-boxes-packing text-blue-300" /> Administrative Relief Policy
+                  </div>
+                  <h2 className="font-display font-black text-xl text-white tracking-tight">
+                    Relief Goods Package Templates
+                  </h2>
+                  <p className="text-xs text-blue-100/80 max-w-2xl leading-relaxed">
+                    Configure baseline relief items per sector based on live warehouse stock. Changes persist in the database and automatically synchronize across all Staff desk distribution terminals.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleSavePackageTemplate}
+                    disabled={pkgSaving}
+                    className="btn bg-white text-navy hover:bg-blue-50 font-extrabold text-xs px-4 py-2 rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    {pkgSaving ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin text-blue-600" />
+                        <span>Saving Template...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-save text-blue-600" />
+                        <span>Save Package Template</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sector Category Switcher Tabs */}
+            <div className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <i className="fas fa-layer-group text-blue-600 text-xs" />
+                  Select Sector Category:
+                </label>
+                <span className="text-[11px] text-slate-400">
+                  Configuring baseline package for: <strong className="text-navy">{activePkgSectorObj?.name}</strong>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                {ALL_PACKAGE_SECTORS.map(sec => {
+                  const isSelected = pkgSector === sec.code
+                  return (
+                    <button
+                      key={sec.code}
+                      type="button"
+                      onClick={() => setPkgSector(sec.code)}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all whitespace-nowrap cursor-pointer ${
+                        isSelected
+                          ? 'text-white shadow-sm ring-2 ring-offset-1'
+                          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                      }`}
+                      style={isSelected ? { backgroundColor: sec.color, borderColor: sec.color, outlineColor: sec.color } : {}}
+                    >
+                      <i className={`fas ${sec.icon} text-xs`} />
+                      <span>{sec.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Package Items & Live Warehouse Inventory Management */}
+            <div className="card p-5 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+                <div>
+                  <h3 className="font-display font-extrabold text-base text-navy flex items-center gap-2">
+                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: activePkgSectorObj?.color || '#1a56db' }} />
+                    {activePkgSectorObj?.name} Relief Package
+                    <span className="text-xs text-slate-400 font-normal">({pkgItems.length} items)</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Items below will be issued by default when staff select this sector during desk distribution.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSavePackageTemplate}
+                  disabled={pkgSaving}
+                  className="btn btn-primary btn-sm px-4 flex items-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  {pkgSaving ? <i className="fas fa-spinner fa-spin" /> : <i className="fas fa-save" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+
+              {/* Items List */}
+              {pkgItems.length === 0 ? (
+                <div className="p-10 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-400 text-xs space-y-2">
+                  <i className="fas fa-box-open text-3xl text-slate-300 block" />
+                  <div className="font-semibold text-slate-600">No items configured for this standard package</div>
+                  <div>Select an item from the warehouse inventory dropdown below to add it.</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pkgItems.map((it, idx) => {
+                    const invMatch = (inventory || []).find(inv =>
+                      (it.item_id && inv.id === it.item_id) ||
+                      (inv.name.toLowerCase() === (it.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (it.unit || '').toLowerCase()) ||
+                      inv.name.toLowerCase() === (it.item_name || '').toLowerCase()
+                    )
+                    const stockQty = invMatch ? invMatch.quantity : 0
+                    const isOutOfStock = stockQty <= 0
+                    const isLowStock = !isOutOfStock && stockQty < (parseFloat(it.quantity) || 1)
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-3.5 rounded-2xl border transition-all flex flex-col justify-between gap-3 ${
+                          isOutOfStock
+                            ? 'bg-red-50/50 border-red-200 shadow-2xs'
+                            : isLowStock
+                            ? 'bg-amber-50/50 border-amber-200 shadow-2xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-bold text-navy text-sm truncate">{it.item_name}</span>
+                              {isOutOfStock ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700 flex items-center gap-1">
+                                  <i className="fas fa-triangle-exclamation text-[9px]" /> Out of Stock
+                                </span>
+                              ) : isLowStock ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 flex items-center gap-1">
+                                  <i className="fas fa-circle-exclamation text-[9px]" /> Low Stock
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                                  <i className="fas fa-circle-check text-[9px]" /> In Stock
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1 flex items-center gap-1.5">
+                              <span>Warehouse Stock:</span>
+                              <strong className={isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-700' : 'text-emerald-700'}>
+                                {stockQty} {it.unit}
+                              </strong>
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handlePkgRemoveItem(idx)}
+                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 flex items-center justify-center transition-colors cursor-pointer flex-shrink-0"
+                            title="Remove from package"
+                          >
+                            <i className="fas fa-trash text-xs" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t border-slate-100/80">
+                          <span className="text-[11px] font-bold text-slate-600">Standard Quantity:</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="number"
+                              min="0.1"
+                              step="any"
+                              value={it.quantity}
+                              onChange={e => handlePkgUpdateQty(idx, e.target.value)}
+                              className="w-20 form-input text-xs text-center py-1 font-bold text-navy bg-slate-50 border-slate-200 rounded-lg focus:bg-white"
+                            />
+                            <span className="text-xs font-bold text-slate-500 w-12 text-center">{it.unit}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add Item from Warehouse Section */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 mt-2">
+                <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <i className="fas fa-plus text-blue-600 text-xs" />
+                  <span>Add Item to {activePkgSectorObj?.name} Package:</span>
+                </div>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <select
+                    value={pkgNewItemId}
+                    onChange={e => {
+                      setPkgNewItemId(e.target.value)
+                      handlePkgAddItem(e.target.value)
+                    }}
+                    className="form-input text-xs py-2 rounded-xl flex-1 bg-white border-slate-200"
+                  >
+                    <option value="">+ Select Item from Live Warehouse Stock...</option>
+                    {(inventory || []).map(inv => (
+                      <option key={inv.id} value={inv.id}>
+                        {inv.name} [{inv.unit}] — {inv.quantity} available in warehouse {inv.quantity === 0 ? '(OUT OF STOCK)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Select an item to add it to the template. Staff can still modify quantities per resident on-the-fly during desk distribution.
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

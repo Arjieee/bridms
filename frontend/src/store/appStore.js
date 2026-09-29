@@ -458,8 +458,21 @@ export const useAppStore = create((set, get) => ({
         }
       },
 
-      updateStandardPackage: (cycleType, items) =>
-        set((s) => ({ standardPackages: { ...s.standardPackages, [cycleType]: items } })),
+      updateStandardPackage: async (sectorCode, items) => {
+        try {
+          const res = await apiFetch(`/settings/standard-packages/${sectorCode}`, {
+            method: 'PUT',
+            body: JSON.stringify({ items }),
+          });
+          if (res.ok) {
+            await get().fetchInitialData();
+            return { ok: true, message: res.message || 'Standard package updated.' };
+          }
+          return { ok: false, message: res.message || 'Failed to update standard package.' };
+        } catch (err) {
+          return { ok: false, message: err.message };
+        }
+      },
 
       // --- Households & Registration ---
       addPendingReg: async (data) => {

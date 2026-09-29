@@ -17,6 +17,7 @@ const DONOR_TYPES = [
 export default function AdminSuppliers() {
   const { suppliers, addSupplier } = useAppStore()
   const [showAdd, setShowAdd] = useState(false)
+  const [showPrintPreview, setShowPrintPreview] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState({
@@ -130,7 +131,11 @@ export default function AdminSuppliers() {
           <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer" title="Export Donors to CSV">
             <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span className="hidden sm:inline">Export CSV</span>
           </button>
-          <button onClick={() => window.print()} className="btn btn-outline btn-sm">
+          <button
+            onClick={() => setShowPrintPreview(true)}
+            className="btn btn-outline btn-sm flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            title="Preview and print official donors directory"
+          >
             <i className="fas fa-print" /> <span className="hidden sm:inline">Print</span>
           </button>
           <button onClick={() => setShowAdd(true)} className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm">
@@ -152,17 +157,8 @@ export default function AdminSuppliers() {
         </a>
       </div>
 
-      {/* Printable Title */}
-      <div className="print-centered">
-        <div className="hidden print:block mb-6">
-          <div className="text-center">
-            <div className="font-display font-extrabold text-2xl text-navy">Barangay Puerto</div>
-            <div className="text-sm text-slate-600">Suppliers & Donors Directory</div>
-            <div className="text-xs text-slate-400 mt-1">Generated: {new Date().toLocaleDateString('en-PH', { dateStyle: 'long' })}</div>
-          </div>
-          <hr className="my-4 border-slate-300" />
-        </div>
-
+      {/* Donors Content Section */}
+      <div>
         {/* Empty State */}
         {filteredSuppliers.length === 0 && (
           <div className="card p-12 text-center text-slate-400 bg-white rounded-2xl border border-slate-200">
@@ -349,6 +345,188 @@ export default function AdminSuppliers() {
           </motion.div>
         </div>
       )}
+
+      {/* Print Preview Modal */}
+      {showPrintPreview && (
+        <SuppliersPrintPreviewModal
+          suppliers={filteredSuppliers}
+          searchQuery={searchQuery}
+          onClose={() => setShowPrintPreview(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+/**
+ * Printable Suppliers & Donors Directory Modal
+ */
+function SuppliersPrintPreviewModal({ suppliers, searchQuery, onClose }) {
+  if (!suppliers) return null
+
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const currentDate = new Date().toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+
+  return (
+    <div
+      className="modal-overlay print-slip fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="card modal-box p-6 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
+      >
+        {/* Close Button top-right */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="no-print absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
+          title="Close Preview"
+        >
+          <i className="fas fa-times text-sm" />
+        </button>
+
+        {/* Printable Document Section */}
+        <div id="suppliers-directory-printable" className="space-y-4 text-slate-800">
+          {/* Header */}
+          <div className="text-center border-b pb-4 border-slate-200">
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+              Republic of the Philippines · City of Cagayan de Oro
+            </div>
+            <div className="text-lg font-black text-navy uppercase tracking-tight mt-0.5">
+              Barangay Puerto Disaster Risk Reduction &amp; Relief Operations
+            </div>
+            <div className="inline-block mt-2 px-3.5 py-0.5 bg-blue-50 border border-blue-200 rounded-full text-blue-800 font-bold text-xs uppercase tracking-wide">
+              Official Suppliers &amp; Donors Directory
+            </div>
+          </div>
+
+          {/* Reference Meta Box */}
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Date Generated</div>
+                <div className="font-bold text-slate-800 text-xs mt-0.5">{currentDate}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Total Donors Listed</div>
+                <div className="font-mono font-black text-navy text-sm mt-0.5">{suppliers.length} Records</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Registry Scope</div>
+                <div className="font-bold text-blue-700 text-xs mt-0.5 truncate">
+                  {searchQuery ? `Filtered: "${searchQuery}"` : 'Official Complete Registry'}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
+              <span>Registered Donors &amp; Partner Suppliers</span>
+              <span className="text-slate-500 font-semibold text-[10px] normal-case">
+                {suppliers.length} {suppliers.length === 1 ? 'record' : 'records'} total
+              </span>
+            </div>
+            <table className="w-full text-left">
+              <thead className="bg-slate-50 text-[10px] text-slate-600 font-bold uppercase border-b border-slate-200">
+                <tr>
+                  <th className="py-2.5 px-3 w-10">#</th>
+                  <th className="py-2.5 px-3">Organization / Donor Name</th>
+                  <th className="py-2.5 px-3">Contact Person</th>
+                  <th className="py-2.5 px-3">Contact Number</th>
+                  <th className="py-2.5 px-3">Donation Date</th>
+                  <th className="py-2.5 px-3">Type</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {suppliers.length > 0 ? (
+                  suppliers.map((s, idx) => (
+                    <tr key={s.id || idx} className="hover:bg-slate-50/50">
+                      <td className="py-2.5 px-3 text-slate-500 font-mono text-[11px]">{idx + 1}</td>
+                      <td className="py-2.5 px-3 font-bold text-navy text-xs">
+                        {s.org_name || s.name}
+                        {s.donor_code && (
+                          <span className="ml-1.5 text-[9px] text-slate-500 font-mono bg-slate-100 px-1 py-0.2 rounded border border-slate-200">
+                            {s.donor_code}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-700 font-medium text-xs">
+                        {s.contact_person || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-700 font-mono text-xs">
+                        {s.contact_number || s.contact_num || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 text-slate-700 text-xs whitespace-nowrap">
+                        {s.donation_date || '—'}
+                      </td>
+                      <td className="py-2.5 px-3 whitespace-nowrap">
+                        <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                          {s.donor_type || 'General'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-6 px-3 text-center text-slate-500 italic">
+                      No supplier or donor records found to print.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Signature Sign-offs */}
+          <div className="pt-6 grid grid-cols-2 gap-8 text-center text-xs">
+            <div>
+              <div className="border-b border-slate-400 pb-1 h-8" />
+              <div className="font-bold text-navy mt-1.5">Prepared By</div>
+              <div className="text-[10px] text-slate-500">Logistics &amp; Relief Records Custodian</div>
+            </div>
+            <div>
+              <div className="border-b border-slate-400 pb-1 h-8" />
+              <div className="font-bold text-navy mt-1.5">Attested &amp; Certified By</div>
+              <div className="text-[10px] text-slate-500">Punong Barangay / CDRRMO Representative</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Modal Actions (Hidden in Print) */}
+        <div className="no-print mt-6 pt-4 border-t border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+          <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
+            <i className="fas fa-file-shield text-blue-500" />
+            <span>Official Barangay Relief Administration Document</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="btn btn-outline btn-sm px-3.5 flex items-center gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 cursor-pointer font-semibold shadow-2xs"
+            >
+              <i className="fas fa-print" /> Print Directory
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn btn-gray btn-sm px-3.5 cursor-pointer font-medium"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </motion.div>
     </div>
   )
 }

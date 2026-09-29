@@ -1,4 +1,5 @@
 import { prisma } from '../db/prisma.js';
+import { addActivityLog } from '../services/dbHelper.js';
 
 export const getPuroks = async (req, res) => {
   try {
@@ -201,3 +202,74 @@ export const getActivityLogs = async (req, res) => {
     return res.status(500).json({ ok: false, message: 'Failed to fetch activity logs.' });
   }
 };
+
+export const updateStandardPackage = async (req, res) => {
+  try {
+    const { sector_code } = req.params;
+    const { items } = req.body;
+
+    if (!sector_code) {
+      return res.status(400).json({ ok: false, message: 'Sector code is required.' });
+    }
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ ok: false, message: 'Items array is required.' });
+    }
+
+    const cleanSectorCode = sector_code.trim().toLowerCase();
+
+    // Delete existing package items for this sector_code
+    await prisma.standardPackage.deleteMany({
+      where: { sector_code: cleanSectorCode },
+    });
+
+    const allInv = await prisma.inventoryItem.findMany();
+    const createdItems = [];
+
+    for (const it of items) {
+      let matchedInv = null;
+      if (it.item_id) {
+        matchedInv = allInv.find((inv) => inv.id === Number(it.item_id));
+      }
+      if (!matchedInv && it.item_name && it.unit) {
+        matchedInv = allInv.find(
+          (inv) =>
+            inv.name.trim().toLowerCase() === it.item_name.trim().toLowerCase() &&
+            inv.unit.trim().toLowerCase() === it.unit.trim().toLowerCase()
+        );
+      }
+
+      const qty = parseFloat(it.quantity) || 1;
+      if (qty > 0) {
+        const newPkg = await prisma.standardPackage.create({
+          data: {
+            sector_code: cleanSectorCode,
+            item_id: matchedInv ? matchedInv.id : (Number(it.item_id) || null),
+            item_name: matchedInv?.name || it.item_name || 'Standard Item',
+            quantity: qty,
+            unit: matchedInv?.unit || it.unit || 'pcs',
+          },
+        });
+        createdItems.push(newPkg);
+      }
+    }
+
+    await addActivityLog({
+      account_id: req.user?.id,
+      username: req.user?.username,
+      role: req.user?.role,
+      action: 'updated_standard_package',
+      details: `Updated standard package template for sector "${cleanSectorCode}" (${createdItems.length} items)`,
+    });
+
+    return res.json({
+      ok: true,
+      message: `Standard package template for sector "${cleanSectorCode}" updated successfully.`,
+      sector_code: cleanSectorCode,
+      items: createdItems,
+    });
+  } catch (err) {
+    console.error('Error updating standard package:', err);
+    return res.status(500).json({ ok: false, message: 'Failed to update standard package.' });
+  }
+};
+
