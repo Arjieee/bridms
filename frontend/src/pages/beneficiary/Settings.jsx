@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
+import { formatFormalName } from '../../utils/nameFormatter'
 import PasswordStrengthMeter, { checkStrength } from '../../components/ui/PasswordStrengthMeter'
 import toast from 'react-hot-toast'
 
@@ -86,7 +87,7 @@ export default function BeneficiarySettings() {
 
               <div className="min-w-0">
                 <div className="font-display font-extrabold text-base sm:text-lg text-navy truncate">
-                  {user?.full_name}
+                  {formatFormalName(user)}
                 </div>
                 <div className="flex items-center justify-center sm:justify-start gap-1.5 mt-1 flex-wrap">
                   <span
@@ -162,13 +163,24 @@ export default function BeneficiarySettings() {
                     <h4 className="font-display font-bold text-sm text-navy flex items-center gap-1.5">
                       <i className="fas fa-user text-blue-600" /> Personal Details
                     </h4>
+                    <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[10px] font-bold text-blue-600 uppercase">Official Format (LGU Masterlist)</div>
+                        <div className="text-sm font-bold text-navy mt-0.5">{formatFormalName(user)}</div>
+                      </div>
+                      <span className="badge badge-approved text-[10px]">Standard LGU</span>
+                    </div>
                     <div className="form-group">
-                      <label className="form-label text-xs">Display Name *</label>
+                      <label className="form-label text-xs">Full Name / Display Name *</label>
                       <input
                         className="form-input text-xs py-2"
                         value={form.full_name}
                         onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                        placeholder="Lastname, Firstname M."
                       />
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        Standard format: Lastname, Firstname M. (e.g. Pisos, Arjie B.)
+                      </span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div className="form-group">

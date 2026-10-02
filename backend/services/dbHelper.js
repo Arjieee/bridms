@@ -6,12 +6,13 @@ export const ageGroup = (age) => {
   return num >= 60 ? 'senior' : num >= 18 ? 'adult' : 'minor';
 };
 
-export const mkMember = (id, is_head, fname, lname, age, sex, relationship, contact, email, sectors = []) => {
+export const mkMember = (id, is_head, fname, lname, age, sex, relationship, contact, email, sectors = [], mname = null) => {
   const parsedAge = parseInt(age) || 0;
   return {
     id: id || 'm-' + shortId() + Math.random().toString(36).substr(2, 3),
     is_head: Boolean(is_head),
     fname: (fname || '').trim(),
+    mname: mname ? mname.trim() : null,
     lname: (lname || '').trim(),
     age: parsedAge,
     age_group: ageGroup(parsedAge),

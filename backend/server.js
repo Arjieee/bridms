@@ -17,6 +17,7 @@ import settingsRoutes from './routes/settings.js';
 import receivingRoutes from './routes/receiving.js';
 
 import { prisma } from './db/prisma.js';
+// Server initialization
 
 dotenv.config();
 

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
 import { apiFetch } from '../../api/client'
+import { formatFormalName } from '../../utils/nameFormatter'
 import PasswordStrengthMeter, { checkStrength } from './PasswordStrengthMeter'
 import LogoutConfirm from './LogoutConfirm'
 import toast from 'react-hot-toast'
@@ -156,7 +157,7 @@ export default function ProfileAvatar() {
                     {user.photo ? <img src={user.photo} alt="" className="w-full h-full object-cover" /> : initial}
                   </div>
                   <div className="min-w-0">
-                    <div className="font-display font-bold text-sm text-navy truncate">{user.full_name}</div>
+                    <div className="font-display font-bold text-sm text-navy truncate">{formatFormalName(user)}</div>
                     <div className="text-[11px] capitalize" style={{ color: color.dark }}>
                       <i className="fas fa-circle text-[6px] mr-1" />{user.role}
                     </div>
@@ -221,7 +222,7 @@ export default function ProfileAvatar() {
                     </div>
 
                     <div className="min-w-0">
-                      <div className="font-display font-bold text-xs sm:text-sm text-navy truncate">{user.full_name}</div>
+                      <div className="font-display font-bold text-xs sm:text-sm text-navy truncate">{formatFormalName(user)}</div>
                       <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                         <span className="badge font-bold text-[9px] capitalize px-1.5 py-0.5" style={{ background: color.tint, color: color.dark }}>
                           <i className="fas fa-user-shield text-[8px] mr-1" />{user.role}

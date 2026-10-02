@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { QRCodeSVG } from 'qrcode.react'
 import { useAuthStore } from '../../store/authStore'
 import { useAppStore } from '../../store/appStore'
+import { formatFormalName } from '../../utils/nameFormatter'
 import SectorPicker from '../../components/ui/SectorPicker'
 import toast from 'react-hot-toast'
 
@@ -16,11 +17,11 @@ export default function BeneficiaryDashboard() {
   const [showAddMember, setShowAddMember] = useState(false)
   const [editingMember, setEditingMember] = useState(null)
   const [editForm, setEditForm] = useState({
-    fname: '', lname: '', age: '', sex: '', relationship: '',
+    fname: '', mname: '', lname: '', age: '', sex: '', relationship: '',
     contact: '', email: '', sectors: [],
   })
   const [memberForm, setMemberForm] = useState({
-    fname: '', lname: '', age: '', sex: '', relationship: '',
+    fname: '', mname: '', lname: '', age: '', sex: '', relationship: '',
     contact: '', email: '', sectors: [],
   })
   const [disputeReason, setDisputeReason] = useState('')
@@ -125,6 +126,7 @@ export default function BeneficiaryDashboard() {
     setEditingMember(m)
     setEditForm({
       fname: m.fname || '',
+      mname: m.mname || '',
       lname: m.lname || '',
       age: m.age !== undefined ? String(m.age) : '',
       sex: m.sex || '',
@@ -183,7 +185,7 @@ export default function BeneficiaryDashboard() {
         transition={{ duration: 0.15 }}
         className="card p-5 text-white" style={{ background: 'linear-gradient(135deg, #0a1f47, #1a56db)' }}>
           <div className="text-white/60 text-[10px] font-bold uppercase tracking-wide">My Household</div>
-          <div className="font-display font-bold text-lg mt-1">{head?.fname} {head?.lname}</div>
+          <div className="font-display font-bold text-lg mt-1">{head ? formatFormalName(head) : 'My Household'}</div>
           <div className="text-white/70 text-sm mt-1">
             <i className="fas fa-map-marker-alt mr-1" />{hh.purok_name}
             {hh.house_no_street && ` · ${hh.house_no_street}`}
@@ -364,7 +366,7 @@ export default function BeneficiaryDashboard() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold text-sm text-navy flex items-center gap-1.5 flex-wrap">
-                        {m.fname} {m.lname}
+                        {formatFormalName(m)}
                         {m.is_head && <span className="badge badge-approved">Head</span>}
                       </div>
                       <div className="text-[11px] text-slate-400">{m.age}y · {m.sex} · {m.relationship}</div>
@@ -472,17 +474,25 @@ export default function BeneficiaryDashboard() {
                   <i className="fas fa-circle-info mr-1" />
                   Add a new member (e.g. newborn baby, relative who moved in). If the member is eligible for an active sector cycle, a QR code will be auto-generated.
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
                     <label className="form-label">First Name *</label>
                     <input className="form-input" value={memberForm.fname}
                       onChange={e => setMemberForm(f => ({ ...f, fname: e.target.value }))} autoFocus />
                   </div>
                   <div className="form-group">
+                    <label className="form-label">Middle Name <span className="text-slate-400 font-normal">(optional)</span></label>
+                    <input className="form-input" value={memberForm.mname || ''}
+                      onChange={e => setMemberForm(f => ({ ...f, mname: e.target.value }))}
+                      placeholder="e.g. Bantayan" />
+                  </div>
+                  <div className="form-group">
                     <label className="form-label">Last Name *</label>
                     <input className="form-input" value={memberForm.lname}
                       onChange={e => setMemberForm(f => ({ ...f, lname: e.target.value }))} />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="form-group">
                     <label className="form-label">Age *</label>
                     <input type="number" min="0" className="form-input" value={memberForm.age}
@@ -595,17 +605,25 @@ export default function BeneficiaryDashboard() {
                 </button>
               </div>
               <div className="modal-body space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
                     <label className="form-label">First Name *</label>
                     <input className="form-input" value={editForm.fname}
                       onChange={e => setEditForm(f => ({ ...f, fname: e.target.value }))} />
                   </div>
                   <div className="form-group">
+                    <label className="form-label">Middle Name <span className="text-slate-400 font-normal">(optional)</span></label>
+                    <input className="form-input" value={editForm.mname || ''}
+                      onChange={e => setEditForm(f => ({ ...f, mname: e.target.value }))}
+                      placeholder="e.g. Bantayan" />
+                  </div>
+                  <div className="form-group">
                     <label className="form-label">Last Name *</label>
                     <input className="form-input" value={editForm.lname}
                       onChange={e => setEditForm(f => ({ ...f, lname: e.target.value }))} />
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="form-group">
                     <label className="form-label">Age</label>
                     <input type="number" min="0" className="form-input" value={editForm.age}

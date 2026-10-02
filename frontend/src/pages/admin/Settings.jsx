@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/appStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
 import { resolveInventoryMatch, isBulkPackaging } from '../../utils/inventoryMatching'
+import { formatFormalName } from '../../utils/nameFormatter'
 import PasswordStrengthMeter, { checkStrength } from '../../components/ui/PasswordStrengthMeter'
 import toast from 'react-hot-toast'
 
@@ -540,7 +541,7 @@ export default function AdminSettings() {
                   <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3">
                     <div className="min-w-0 flex-1">
                       <div className="font-display font-bold text-base text-navy flex items-center gap-2 flex-wrap">
-                        <span>{reg.head?.fname} {reg.head?.lname}</span>
+                        <span>{reg.head ? formatFormalName(reg.head) : 'N/A'}</span>
                         <span className="text-xs font-normal text-slate-400">@{reg.username}</span>
                       </div>
                       <div className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-2 flex-wrap">
@@ -1353,11 +1354,16 @@ export default function AdminSettings() {
               <div>
                 <div className="text-[11px] font-bold text-blue-600 uppercase mb-2">Household Head</div>
                 <div className="grid grid-cols-2 gap-2">
-                  {[['Name', `${regDetail.head?.fname} ${regDetail.head?.lname}`],
+                  {[
+                    ['Formal Name', formatFormalName(regDetail.head)],
+                    ['First Name', regDetail.head?.fname],
+                    ['Middle Name', regDetail.head?.mname || '—'],
+                    ['Last Name', regDetail.head?.lname],
                     ['Age', regDetail.head?.age],
                     ['Sex', regDetail.head?.sex],
                     ['Contact', regDetail.head?.contact],
-                    ['Email', regDetail.head?.email]].map(([k, v]) => (
+                    ['Email', regDetail.head?.email],
+                  ].map(([k, v]) => (
                     <div key={k} className="bg-blue-50 p-2.5 rounded-xl">
                       <div className="text-[10px] font-bold text-blue-400 uppercase mb-0.5">{k}</div>
                       <div className="text-xs font-semibold text-navy">{v || '—'}</div>
@@ -1380,8 +1386,11 @@ export default function AdminSettings() {
                   <div className="text-[11px] font-bold text-slate-400 uppercase mb-2">Members ({regDetail.members.length})</div>
                   {regDetail.members.map((m, i) => (
                     <div key={i} className="bg-slate-50 p-3 rounded-xl mb-2">
-                      <div className="font-semibold text-sm text-navy">{m.fname} {m.lname}</div>
-                      <div className="text-xs text-slate-500">{m.age}y · {m.sex} · {m.relationship}</div>
+                      <div className="font-semibold text-sm text-navy">{formatFormalName(m)}</div>
+                      <div className="text-xs text-slate-500">
+                        {m.age}y · {m.sex} · {m.relationship}
+                        {m.mname && ` · Middle: ${m.mname}`}
+                      </div>
                       {(m.contact || m.email) && (
                         <div className="text-[11px] text-slate-400 mt-1">
                           {m.contact && <><i className="fas fa-phone mr-1" />{m.contact}</>}

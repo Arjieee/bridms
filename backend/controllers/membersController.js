@@ -73,6 +73,7 @@ export const addMember = async (req, res) => {
         household_id: hhId,
         is_head: false,
         fname: memberData.fname.trim(),
+        mname: memberData.mname?.trim() || null,
         lname: memberData.lname.trim(),
         age: parsedAge,
         age_group: ageGroup(parsedAge),
@@ -189,6 +190,7 @@ export const updateMember = async (req, res) => {
 
     const updateFields = {};
     if (updatedData.fname !== undefined) updateFields.fname = updatedData.fname.trim();
+    if (updatedData.mname !== undefined) updateFields.mname = updatedData.mname?.trim() || null;
     if (updatedData.lname !== undefined) updateFields.lname = updatedData.lname.trim();
     if (updatedData.age !== undefined) {
       const ageNum = parseInt(updatedData.age) || 0;

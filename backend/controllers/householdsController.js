@@ -274,7 +274,8 @@ export const approveRegistration = async (req, res) => {
       'Head',
       head.contact,
       head.email,
-      head.sectors || []
+      head.sectors || [],
+      head.mname || null
     );
 
     // Build other members
@@ -289,7 +290,8 @@ export const approveRegistration = async (req, res) => {
         m.relationship || 'Other',
         m.contact,
         m.email,
-        m.sectors || []
+        m.sectors || [],
+        m.mname || null
       )
     );
 
@@ -297,6 +299,11 @@ export const approveRegistration = async (req, res) => {
       ...m,
       household_id: hhId,
     }));
+
+    const mi = (head.mname || '').trim().replace(/\./g, '')[0]?.toUpperCase();
+    const headFormalName = head.lname && head.fname
+      ? `${head.lname.trim()}, ${head.fname.trim()}${mi ? ' ' + mi + '.' : ''}`
+      : `${head.fname || ''} ${head.lname || ''}`.trim() || 'Beneficiary';
 
     // Transaction: Create Account, Household, Members, and update PendingRegistration
     const [newAccount, newHH] = await prisma.$transaction([
@@ -306,7 +313,7 @@ export const approveRegistration = async (req, res) => {
           username: reg.username,
           password: reg.password,
           role: 'beneficiary',
-          full_name: `${head.fname} ${head.lname}`,
+          full_name: headFormalName,
           email: head.email || null,
           contact: head.contact || null,
           is_email_verified: reg.is_email_verified,

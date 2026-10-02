@@ -112,6 +112,7 @@ model Member {
   household         Household @relation(fields: [household_id], references: [id], onDelete: Cascade)
   is_head           Boolean   @default(false)
   fname             String
+  mname             String?
   lname             String
   age               Int       @default(0)
   age_group         String    @default("adult") // "minor" | "adult" | "senior"

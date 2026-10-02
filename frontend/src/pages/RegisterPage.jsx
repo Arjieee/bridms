@@ -5,9 +5,10 @@ import { useAppStore } from '../store/appStore'
 import PasswordStrengthMeter, { checkStrength } from '../components/ui/PasswordStrengthMeter'
 import SectorPicker from '../components/ui/SectorPicker'
 import { checkDuplicate } from '../components/ui/duplicateCheck'
+import { formatFormalName } from '../utils/nameFormatter'
 import toast from 'react-hot-toast'
 
-const blankMember = () => ({ fname: '', lname: '', age: '', sex: '', relationship: '', contact: '', email: '', sectors: [] })
+const blankMember = () => ({ fname: '', mname: '', lname: '', age: '', sex: '', relationship: '', contact: '', email: '', sectors: [] })
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -28,7 +29,7 @@ export default function RegisterPage() {
 
   const [houseNo, setHouseNo] = useState('')
   const [purokId, setPurokId] = useState('')
-  const [head, setHead] = useState({ fname: '', lname: '', age: '', sex: '', contact: '', email: '', sectors: [] })
+  const [head, setHead] = useState({ fname: '', mname: '', lname: '', age: '', sex: '', contact: '', email: '', sectors: [] })
   const [members, setMembers] = useState([])
   const [emergency, setEmergency] = useState({ receiver_name: '', receiver_contact: '', relationship: '' })
   const [username, setUsername] = useState('')
@@ -230,19 +231,29 @@ export default function RegisterPage() {
               <>
                 <h3 className="font-display font-bold text-base text-navy mb-1">Step 2: Household Head</h3>
                 <p className="text-xs text-slate-500 mb-5">This person will own the account and act as primary contact.</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
                     <label className="form-label">First Name *</label>
                     <input className={`form-input ${errors.hfname ? 'error' : ''}`}
-                      value={head.fname} onChange={e => updateHead('fname', e.target.value)} />
+                      value={head.fname} onChange={e => updateHead('fname', e.target.value)}
+                      placeholder="e.g. Arjie" />
                     {errors.hfname && <div className="text-red-500 text-xs mt-1">{errors.hfname}</div>}
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Middle Name <span className="text-slate-400 font-normal">(optional)</span></label>
+                    <input className="form-input"
+                      value={head.mname || ''} onChange={e => updateHead('mname', e.target.value)}
+                      placeholder="e.g. Bantayan" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Last Name *</label>
                     <input className={`form-input ${errors.hlname ? 'error' : ''}`}
-                      value={head.lname} onChange={e => updateHead('lname', e.target.value)} />
+                      value={head.lname} onChange={e => updateHead('lname', e.target.value)}
+                      placeholder="e.g. Pisos" />
                     {errors.hlname && <div className="text-red-500 text-xs mt-1">{errors.hlname}</div>}
                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="form-group">
                     <label className="form-label">
                       Age * {parseInt(head.age) >= 60 && <span className="text-amber-500 font-normal">· Senior auto-tagged</span>}
@@ -310,17 +321,27 @@ export default function RegisterPage() {
                         <i className="fas fa-trash" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="form-group">
                         <label className="form-label">First Name</label>
                         <input className="form-input" value={m.fname}
-                          onChange={e => updateMember(i, 'fname', e.target.value)} />
+                          onChange={e => updateMember(i, 'fname', e.target.value)}
+                          placeholder="e.g. Juan" />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Middle Name <span className="text-slate-400 font-normal">(optional)</span></label>
+                        <input className="form-input" value={m.mname || ''}
+                          onChange={e => updateMember(i, 'mname', e.target.value)}
+                          placeholder="e.g. Santos" />
                       </div>
                       <div className="form-group">
                         <label className="form-label">Last Name</label>
                         <input className="form-input" value={m.lname}
-                          onChange={e => updateMember(i, 'lname', e.target.value)} />
+                          onChange={e => updateMember(i, 'lname', e.target.value)}
+                          placeholder="e.g. Dela Cruz" />
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mt-2">
                       <div className="form-group">
                         <label className="form-label">Age</label>
                         <input type="number" min="0" className="form-input" value={m.age}

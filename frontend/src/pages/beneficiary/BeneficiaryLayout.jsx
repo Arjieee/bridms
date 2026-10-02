@@ -9,6 +9,7 @@ import CycleHeaderWidget from '../../components/ui/CycleHeaderWidget'
 import LogoutConfirm from '../../components/ui/LogoutConfirm'
 import { useRedDots } from '../../components/ui/useRedDots'
 import { PageSkeleton } from '../../components/ui/Skeleton'
+import { formatFormalName } from '../../utils/nameFormatter'
 import toast from 'react-hot-toast'
 
 const BEN_NAV = [
@@ -104,7 +105,7 @@ export default function BeneficiaryLayout() {
                 : (user?.full_name?.[0] || 'B')}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-semibold text-white truncate">{user?.full_name || 'Beneficiary'}</div>
+              <div className="text-xs font-semibold text-white truncate">{formatFormalName(user) || 'Beneficiary'}</div>
               <div className="text-[10px] text-white/40 truncate">Beneficiary Account</div>
             </div>
           </div>

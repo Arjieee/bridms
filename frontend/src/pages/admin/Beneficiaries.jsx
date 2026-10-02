@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
+import { formatFormalName } from '../../utils/nameFormatter'
 import toast from 'react-hot-toast'
 
 const normalizeSectors = (sectors) => {
@@ -28,6 +29,7 @@ export default function AdminBeneficiaries() {
   const [purokFilter, setPurok] = useState('')
   const [sectorFilter, setSector] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // 'all' | 'active' | 'inactive' | 'deceased'
+  const [sortOrder, setSortOrder] = useState('name_asc') // 'name_asc' | 'name_desc' | 'code'
   const [expanded, setExpanded] = useState({})
   const [memberDetail, setMemberDetail] = useState(null)
   const [statusModal, setStatusModal] = useState(null)
@@ -39,33 +41,60 @@ export default function AdminBeneficiaries() {
   const totalHouseholdsCount = households.length
   const totalResidentsCount = households.reduce((sum, hh) => sum + (hh.members?.length || 0), 0)
 
-  const filtered = households.filter(hh => {
-    if (purokFilter && String(hh.purok_id) !== purokFilter) return false
-    if (sectorFilter) {
-      const hasSector = hh.members?.some(m => m.sectors?.includes(sectorFilter))
-      if (!hasSector) return false
-    }
-    if (statusFilter !== 'all') {
-      const hasStatusMember = hh.members?.some(m => {
-        const mStatus = m.status || 'active';
-        return mStatus === statusFilter;
-      });
-      if (!hasStatusMember) return false;
-    }
-    if (search) {
-      const head = hh.members?.find(m => m.is_head)
-      const memberNames = (hh.members || []).map(m => `${m.fname} ${m.lname}`)
-      const purokName = puroks.find(p => p.id === hh.purok_id)?.name || ''
-      const targetFields = [
-        hh.hh_code,
-        head ? `${head.fname} ${head.lname}` : '',
-        ...memberNames,
-        purokName,
-      ]
-      if (!fuzzyMatch(targetFields, search)) return false
-    }
-    return true
-  })
+  const filtered = useMemo(() => {
+    return households
+      .filter(hh => {
+        if (purokFilter && String(hh.purok_id) !== purokFilter) return false
+        if (sectorFilter) {
+          const hasSector = hh.members?.some(m => m.sectors?.includes(sectorFilter))
+          if (!hasSector) return false
+        }
+        if (statusFilter !== 'all') {
+          const hasStatusMember = hh.members?.some(m => {
+            const mStatus = m.status || 'active';
+            return mStatus === statusFilter;
+          });
+          if (!hasStatusMember) return false;
+        }
+        if (search) {
+          const head = hh.members?.find(m => m.is_head)
+          const memberFormalNames = (hh.members || []).map(m => formatFormalName(m))
+          const memberFullNames = (hh.members || []).map(m => `${m.fname} ${m.mname || ''} ${m.lname}`)
+          const purokName = puroks.find(p => p.id === hh.purok_id)?.name || ''
+          const targetFields = [
+            hh.hh_code,
+            head ? formatFormalName(head) : '',
+            head ? `${head.fname} ${head.lname}` : '',
+            ...memberFormalNames,
+            ...memberFullNames,
+            purokName,
+          ]
+          if (!fuzzyMatch(targetFields, search)) return false
+        }
+        return true
+      })
+      .sort((a, b) => {
+        if (sortOrder === 'code') {
+          return (a.hh_code || '').localeCompare(b.hh_code || '', undefined, { numeric: true })
+        }
+
+        const headA = a.members?.find(m => m.is_head) || a.members?.[0]
+        const headB = b.members?.find(m => m.is_head) || b.members?.[0]
+
+        // Sort alphabetically by Household Head's Last Name, then First Name
+        const nameA = headA
+          ? `${(headA.lname || '').trim()} ${(headA.fname || '').trim()}`.toLowerCase()
+          : (a.hh_code || '').toLowerCase()
+        const nameB = headB
+          ? `${(headB.lname || '').trim()} ${(headB.fname || '').trim()}`.toLowerCase()
+          : (b.hh_code || '').toLowerCase()
+
+        if (sortOrder === 'name_desc') {
+          return nameB.localeCompare(nameA)
+        }
+        return nameA.localeCompare(nameB)
+      })
+  }, [households, purokFilter, sectorFilter, statusFilter, search, puroks, sortOrder])
 
   const filteredResidentsCount = filtered.reduce((sum, hh) => sum + (hh.members?.length || 0), 0)
 
@@ -108,12 +137,12 @@ export default function AdminBeneficiaries() {
       const membersSummary = (hh.members || []).map(m => {
         const sec = m.sectors?.length > 0 ? ` [${m.sectors.join('/')}]` : ''
         const stat = m.status && m.status !== 'active' ? ` (${m.status.toUpperCase()})` : ''
-        return `${m.fname} ${m.lname} (${m.age || 'N/A'}${sec}${stat})`
+        return `${formatFormalName(m)} (${m.age || 'N/A'}${sec}${stat})`
       }).join('; ')
 
       return {
         hh_code: hh.hh_code,
-        head_name: head ? `${head.fname} ${head.lname}` : 'N/A',
+        head_name: head ? formatFormalName(head) : 'N/A',
         purok_name: purokName,
         address: hh.house_no_street || 'Barangay Puerto',
         total_members: hh.members?.length || 0,
@@ -130,37 +159,39 @@ export default function AdminBeneficiaries() {
   return (
     <div>
 
-      {/* Compact Leveled Summary Cards & Search Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 mb-3.5 items-stretch">
-        <div className="card px-3 py-2 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs flex-shrink-0">
-            <i className="fas fa-house-user" />
+      {/* Top Header Metrics & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-2xs flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
+              <i className="fas fa-house-user" />
+            </div>
+            <div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Households</div>
+              <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalHouseholdsCount}</div>
+            </div>
           </div>
-          <div className="min-w-0">
-            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Households</div>
-            <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalHouseholdsCount}</div>
+
+          <div className="bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-2xs flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs shrink-0">
+              <i className="fas fa-users" />
+            </div>
+            <div>
+              <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Residents</div>
+              <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalResidentsCount}</div>
+            </div>
           </div>
         </div>
-        <div className="card px-3 py-2 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs flex-shrink-0">
-            <i className="fas fa-users" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Residents</div>
-            <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalResidentsCount}</div>
-          </div>
-        </div>
-        <div className="relative w-full h-full min-h-[40px] flex items-center sm:col-span-2 md:col-span-1">
-          <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs z-10 pointer-events-none" />
-          <input className="form-input w-full h-full min-h-[40px] bg-white border border-slate-200/90 rounded-xl shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-xs font-medium"
-            style={{ paddingLeft: '38px', paddingRight: isStaff ? '90px' : '14px' }}
-            placeholder="Search by name or HH code..."
-            value={search} onChange={e => setSearch(e.target.value)} />
-          {isStaff && (
-            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 badge badge-pending text-[9px] py-0.5 px-1.5">
-              <i className="fas fa-eye mr-1" />View only
-            </span>
-          )}
+
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={handleExportCSV}
+            className="btn btn-gray btn-sm flex items-center gap-1.5 cursor-pointer text-xs font-semibold py-1.5 px-3 shadow-2xs"
+            title="Export Beneficiaries Masterlist to CSV"
+          >
+            <i className="fas fa-file-csv text-emerald-600 text-sm" />
+            <span>Export Masterlist CSV ({filtered.length})</span>
+          </button>
         </div>
       </div>
 
@@ -240,58 +271,160 @@ export default function AdminBeneficiaries() {
         </div>
       )}
 
-      <div className="card p-4 mb-4 space-y-3">
-        <div>
-          <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filter by Purok</span>
-            <button
-              onClick={handleExportCSV}
-              className="btn btn-gray btn-xs flex items-center gap-1.5 cursor-pointer text-xs font-semibold py-1 px-2.5"
-              title="Export Filtered Beneficiaries to CSV"
+      {/* Consolidated Single-Row Filter Toolbar */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl p-2.5 mb-3.5 shadow-2xs space-y-2">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+          {/* Search Box */}
+          <div className="relative flex-1 min-w-[200px]">
+            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by name, HH code, or address..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="form-input text-xs pl-8 pr-7 py-2 w-full rounded-xl bg-slate-50/80 border-slate-200 focus:bg-white transition-all font-medium"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                title="Clear search query"
+              >
+                <i className="fas fa-xmark text-xs" />
+              </button>
+            )}
+            {isStaff && (
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 badge badge-pending text-[9px] py-0.5 px-1.5">
+                <i className="fas fa-eye mr-1" />View only
+              </span>
+            )}
+          </div>
+
+          {/* Purok Filter Dropdown */}
+          <div className="relative min-w-[130px] sm:min-w-[150px]">
+            <select
+              value={purokFilter}
+              onChange={e => setPurok(e.target.value)}
+              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                purokFilter
+                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-700'
+              }`}
             >
-              <i className="fas fa-file-csv text-emerald-600 text-xs" />
-              <span>Export Masterlist CSV ({filtered.length})</span>
-            </button>
+              <option value="">📍 All Puroks</option>
+              {(puroks || []).filter(p => !p.is_archived).map(p => (
+                <option key={p.id} value={String(p.id)}>{p.name}</option>
+              ))}
+            </select>
           </div>
-          <div className="tab-scroll">
-            <div className={`purok-tab ${!purokFilter ? 'active' : ''}`} onClick={() => setPurok('')}>All</div>
-            {(puroks || []).filter(p => !p.is_archived).map(p => (
-              <div key={p.id} className={`purok-tab ${purokFilter === String(p.id) ? 'active' : ''}`}
-                onClick={() => setPurok(String(p.id))}>{p.name}</div>
-            ))}
+
+          {/* Sector Filter Dropdown */}
+          <div className="relative min-w-[130px] sm:min-w-[150px]">
+            <select
+              value={sectorFilter}
+              onChange={e => setSector(e.target.value)}
+              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                sectorFilter
+                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-700'
+              }`}
+            >
+              <option value="">👥 All Sectors</option>
+              {sectors.map(s => (
+                <option key={s.code} value={s.code}>{s.name}</option>
+              ))}
+            </select>
           </div>
-        </div>
-        <div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Sector</div>
-          <div className="tab-scroll">
-            <div className={`purok-tab ${!sectorFilter ? 'active' : ''}`} onClick={() => setSector('')}>All</div>
-            {sectors.map(s => (
-              <div key={s.code} className={`purok-tab ${sectorFilter === s.code ? 'active' : ''}`}
-                onClick={() => setSector(s.code)}>{s.name}</div>
-            ))}
+
+          {/* Member Status Dropdown */}
+          <div className="relative min-w-[130px] sm:min-w-[140px]">
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                statusFilter !== 'all'
+                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                  : 'bg-white border-slate-200 text-slate-700'
+              }`}
+            >
+              <option value="all">🏷️ All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="deceased">Deceased</option>
+            </select>
+          </div>
+
+          {/* Sort Order Dropdown */}
+          <div className="relative min-w-[125px] sm:min-w-[135px]">
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value)}
+              className="form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full bg-white border-slate-200 text-slate-700"
+              title="Sort Beneficiaries Masterlist"
+            >
+              <option value="name_asc">🔤 Name (A–Z)</option>
+              <option value="name_desc">🔤 Name (Z–A)</option>
+              <option value="code">🔢 HH Code</option>
+            </select>
           </div>
         </div>
 
-        <div>
-          <div className="text-[10px] font-bold text-slate-400 uppercase mb-1.5">Filter by Member Status</div>
-          <div className="tab-scroll">
-            {[
-              { key: 'all', label: 'All Statuses', icon: 'fa-users' },
-              { key: 'active', label: 'Active', icon: 'fa-circle-check text-emerald-600' },
-              { key: 'inactive', label: 'Inactive', icon: 'fa-user-slash text-amber-600' },
-              { key: 'deceased', label: 'Deceased', icon: 'fa-ribbon text-slate-500' },
-            ].map(tab => (
-              <div
-                key={tab.key}
-                onClick={() => setStatusFilter(tab.key)}
-                className={`purok-tab flex items-center gap-1.5 ${statusFilter === tab.key ? 'active' : ''}`}
-              >
-                <i className={`fas ${tab.icon}`} />
-                <span>{tab.label}</span>
-              </div>
-            ))}
+        {/* Active Filter Chips (Only shown when filters or search query are active) */}
+        {(purokFilter || sectorFilter || statusFilter !== 'all' || search) && (
+          <div className="flex items-center gap-1.5 flex-wrap pt-2 border-t border-slate-100 text-xs">
+            <span className="text-[11px] text-slate-400 font-semibold mr-1">Active:</span>
+
+            {purokFilter && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
+                <span>Purok: {puroks.find(p => String(p.id) === String(purokFilter))?.name || 'Selected'}</span>
+                <button type="button" onClick={() => setPurok('')} className="hover:text-blue-900 cursor-pointer">
+                  <i className="fas fa-xmark text-[10px]" />
+                </button>
+              </span>
+            )}
+
+            {sectorFilter && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold">
+                <span>Sector: {sectors.find(s => s.code === sectorFilter)?.name || sectorFilter}</span>
+                <button type="button" onClick={() => setSector('')} className="hover:text-blue-900 cursor-pointer">
+                  <i className="fas fa-xmark text-[10px]" />
+                </button>
+              </span>
+            )}
+
+            {statusFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold capitalize">
+                <span>Status: {statusFilter}</span>
+                <button type="button" onClick={() => setStatusFilter('all')} className="hover:text-blue-900 cursor-pointer">
+                  <i className="fas fa-xmark text-[10px]" />
+                </button>
+              </span>
+            )}
+
+            {search && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-[11px] font-bold">
+                <span>"{search}"</span>
+                <button type="button" onClick={() => setSearch('')} className="hover:text-slate-900 cursor-pointer">
+                  <i className="fas fa-xmark text-[10px]" />
+                </button>
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                setPurok('')
+                setSector('')
+                setStatusFilter('all')
+                setSearch('')
+              }}
+              className="text-[11px] text-red-600 hover:text-red-800 font-semibold underline ml-1 cursor-pointer"
+            >
+              Reset All
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {filtered.length === 0 && (
@@ -314,7 +447,7 @@ export default function AdminBeneficiaries() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-display font-bold text-sm text-navy">{head?.fname} {head?.lname}</span>
+                      <span className="font-display font-bold text-sm text-navy">{head ? formatFormalName(head) : 'N/A'}</span>
                       <span className="badge badge-approved">Approved</span>
                       {hhQR?.is_claimed && <span className="badge badge-claimed">Claimed</span>}
                     </div>
@@ -354,11 +487,17 @@ export default function AdminBeneficiaries() {
                         Household Members ({memberCount})
                       </div>
                       <div className="space-y-2">
-                        {hh.members?.map(m => (
+                        {([...(hh.members || [])].sort((a, b) => {
+                          if (a.is_head) return -1
+                          if (b.is_head) return 1
+                          const nA = `${(a.lname || '').trim()} ${(a.fname || '').trim()}`.toLowerCase()
+                          const nB = `${(b.lname || '').trim()} ${(b.fname || '').trim()}`.toLowerCase()
+                          return nA.localeCompare(nB)
+                        })).map(m => (
                           <div key={m.id} className="bg-white rounded-xl p-3 border border-slate-100 flex items-center justify-between gap-3">
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="font-semibold text-sm text-navy">{m.fname} {m.lname}</span>
+                                <span className="font-semibold text-sm text-navy">{formatFormalName(m)}</span>
                                 {m.is_head && <span className="badge badge-approved">Head</span>}
                                 <span className={`badge badge-${m.status}`}>{m.status}</span>
                               </div>
@@ -415,23 +554,33 @@ export default function AdminBeneficiaries() {
               </button>
             </div>
             <div className="modal-body">
-              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold mx-auto mb-4">
+              <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xl font-bold mx-auto mb-2">
                 {memberDetail.fname?.[0]}{memberDetail.lname?.[0]}
+              </div>
+              <div className="text-center mb-4">
+                <div className="font-display font-extrabold text-base text-navy">
+                  {formatFormalName(memberDetail)}
+                </div>
+                <div className="text-[11px] text-slate-400 font-medium">
+                  Official Formal Format (LGU Masterlist)
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  ['Full Name', `${memberDetail.fname} ${memberDetail.lname}`],
-                  ['Age', `${memberDetail.age}y · ${memberDetail.age_group}`],
-                  ['Sex', memberDetail.sex],
-                  ['Relationship', memberDetail.relationship],
+                  ['First Name', memberDetail.fname],
+                  ['Middle Name', memberDetail.mname || '—'],
+                  ['Last Name', memberDetail.lname],
+                  ['Relationship', memberDetail.relationship || '—'],
+                  ['Age & Group', `${memberDetail.age}y · ${memberDetail.age_group || 'adult'}`],
+                  ['Sex', memberDetail.sex || '—'],
                   ['Contact', memberDetail.contact || '—'],
                   ['Email', memberDetail.email || '—'],
                   ['Status', memberDetail.status],
                   ['HH Code', memberDetail.hh_code],
                 ].map(([k, v]) => (
-                  <div key={k} className="bg-slate-50 p-3 rounded-xl">
+                  <div key={k} className="bg-slate-50 p-2.5 rounded-xl">
                     <div className="text-[10px] font-bold text-slate-400 uppercase mb-0.5">{k}</div>
-                    <div className="text-sm font-semibold text-navy capitalize">{v}</div>
+                    <div className="text-xs font-semibold text-navy capitalize truncate" title={v}>{v}</div>
                   </div>
                 ))}
               </div>
