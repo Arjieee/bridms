@@ -478,15 +478,9 @@ function DeskDistributionModal({
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
           <div>
-            <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5 flex items-center gap-1.5">
-              <i className="fas fa-hand-holding-heart" /> Desk Distribution Terminal
-            </div>
             <h3 className="font-display font-black text-xl text-navy uppercase tracking-tight">
-              Manual Relief Distribution
+              Relief Distribution
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Verify resident, inspect live warehouse stock, and issue relief packages on the spot.
-            </p>
           </div>
           <button
             onClick={onClose}
@@ -501,7 +495,7 @@ function DeskDistributionModal({
           {/* STEP 1: Resident Search or Selected Card */}
           <div>
             <label className="font-bold text-slate-700 block mb-1">
-              1. Resident Identification &amp; Household Verification *
+              1. Select Household / Beneficiary *
             </label>
 
             {!selectedHH ? (
@@ -636,11 +630,8 @@ function DeskDistributionModal({
                     <span>No Active Distribution Cycle</span>
                   </div>
                   <p className="text-amber-800 leading-relaxed">
-                    Relief distribution is currently unavailable because there is no active distribution cycle. Every official relief distribution must be assigned to an active cycle for inventory reconciliation, auditing, and double-claim prevention.
+                    No active distribution cycle found. Please go to <strong>Settings &gt; Distribution Cycles</strong> to activate or create a cycle before issuing relief goods.
                   </p>
-                  <div className="text-[11px] text-amber-700 font-semibold">
-                    Please go to <strong>Settings &gt; Distribution Cycles</strong> to activate or create a cycle before issuing relief goods.
-                  </div>
                 </div>
               ) : existingClaim ? (
                 /* High Visibility Double-Claim Blocker Warning */
@@ -672,7 +663,7 @@ function DeskDistributionModal({
                         Verified &amp; Eligible for Distribution
                       </div>
                       <div className="text-[11px] text-emerald-700">
-                        Cycle: <strong>{targetCycle ? targetCycle.name : 'Standard Relief'}</strong> · No previous claims recorded for this cycle.
+                        No previous claims recorded for this cycle.
                       </div>
                     </div>
                   </div>
@@ -721,7 +712,7 @@ function DeskDistributionModal({
               {/* Physical Recipient / Claimant Selector */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Physical Recipient / Who is Claiming? *
+                  Claimant / Received By *
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <label className={`p-2.5 rounded-xl border text-xs cursor-pointer flex items-center gap-2 transition-all ${
@@ -828,9 +819,8 @@ function DeskDistributionModal({
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="font-bold text-slate-700">
-                      Relief Goods Package Breakdown ({pkgItems.length} items) *
+                      Relief Goods Package ({pkgItems.length} items) *
                     </label>
-                    <span className="text-[10px] text-slate-400 block">Pre-filled from Admin Standard Template</span>
                   </div>
                   <button
                     type="button"
@@ -863,9 +853,6 @@ function DeskDistributionModal({
                           <div className="flex-1 min-w-0">
                             <div className="font-bold text-navy truncate flex items-center gap-1.5 flex-wrap">
                               <span>{item.item_name}</span>
-                              <span className="px-1.5 py-0.2 rounded bg-blue-100/80 text-blue-700 text-[10px] font-bold">
-                                {item.unit}
-                              </span>
                               {invMatch?.donor_name && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`Donor: ${invMatch.donor_name}`}>
                                   <i className="fas fa-hand-holding-heart text-[8px]" />
@@ -1179,9 +1166,6 @@ export default function AdminDistribution() {
       <div className="section-header mb-5">
         <div>
           <h1 className="font-display font-extrabold text-2xl text-navy">Relief Distribution</h1>
-          <div className="section-sub">
-            Desk distribution, beneficiary fulfillment, and running relief logs.
-          </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {isAdmin && (
@@ -1240,16 +1224,11 @@ export default function AdminDistribution() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
                 <span className="text-xs font-bold text-navy bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 inline-flex items-center gap-1.5 truncate">
-                  <i className="fas fa-boxes-packing text-blue-600 text-xs" />
-                  Active Cycle: <strong className="text-navy">{activeCycle ? activeCycle.name : 'None'}</strong>
-                  {activeCycle && (
-                    <span className="text-slate-500 font-normal ml-1">
-                      · {receivedHouseholdIds.size} claimed
-                    </span>
-                  )}
+                  <i className="fas fa-hand-holding-heart text-blue-600 text-xs" />
+                  <span>{receivedHouseholdIds.size} claimed</span>
                 </span>
                 <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                  {records.length} {records.length === 1 ? 'record' : 'records'} found
+                  · {records.length} {records.length === 1 ? 'record' : 'records'} found
                 </span>
               </div>
 
@@ -1274,7 +1253,7 @@ export default function AdminDistribution() {
                   className="form-input text-xs py-1.5 px-2.5 bg-white font-medium border-slate-200 rounded-lg text-slate-700 cursor-pointer w-full"
                 >
                   <option value="">
-                    📅 All Month History {availableMonths.length === 0 ? '(0 logs)' : `(${distributions.length} logs)`}
+                    📅 All Months {distributions.length > 0 ? `(${distributions.length} logs)` : ''}
                   </option>
                   {availableMonths.map(m => {
                     const [year, month] = m.split('-')

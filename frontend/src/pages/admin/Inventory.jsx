@@ -719,7 +719,7 @@ export default function AdminInventory() {
         <div>
           <h1 className="font-display font-extrabold text-2xl text-navy">Relief Goods Inventory</h1>
           <div className="section-sub">
-            {items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`} · Stock segregated by contributing donor for audit compliance
+            {items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -772,7 +772,7 @@ export default function AdminInventory() {
             <i className="fas fa-boxes-stacked" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Lines</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Items</div>
             <div className="text-xl font-extrabold text-navy font-mono">{inventory.length}</div>
           </div>
         </div>
@@ -789,24 +789,24 @@ export default function AdminInventory() {
 
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg shrink-0">
-            <i className="fas fa-boxes-packing" />
+            <i className="fas fa-triangle-exclamation" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Repacked Items</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Low Stock</div>
             <div className="text-xl font-extrabold text-navy font-mono">
-              {inventory.filter(i => i.is_repacked).length}
+              {inventory.filter(i => i.quantity <= (i.low_threshold || 15) && i.quantity > 0).length}
             </div>
           </div>
         </div>
 
         <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
-            <i className="fas fa-dolly" />
+          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-lg shrink-0">
+            <i className="fas fa-circle-xmark" />
           </div>
           <div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bulk Sacks/Cases</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Out of Stock</div>
             <div className="text-xl font-extrabold text-navy font-mono">
-              {inventory.filter(i => isBulkPackaging(i.unit)).length}
+              {inventory.filter(i => i.quantity <= 0).length}
             </div>
           </div>
         </div>
@@ -991,11 +991,6 @@ export default function AdminInventory() {
                         title={`Click to view ${item.name} Stock Ledger history`}
                       >
                         <span className="font-bold text-navy text-sm">{display}</span>
-                        {item.is_repacked && (
-                          <div className="text-[10px] text-amber-700 font-medium mt-0.5">
-                            Ready for relief packaging
-                          </div>
-                        )}
                       </td>
                       <td
                         data-label="Status"

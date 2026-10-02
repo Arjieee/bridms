@@ -202,20 +202,7 @@ export default function ReceivingDonors() {
 
   return (
     <div className="space-y-6">
-      {/* Top Breadcrumb & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
-            <span>Operations</span>
-            <i className="fas fa-chevron-right text-[9px]" />
-            <span className="text-navy font-semibold">Receiving Donors</span>
-          </div>
-          <h1 className="font-display font-extrabold text-2xl text-navy">Receiving Donors</h1>
-          <p className="text-xs text-slate-500">
-            Search a registered donor, categorize items, and record incoming relief shipments into inventory.
-          </p>
-        </div>
-      </div>
+
 
       {/* Main Receiving Form Card */}
       <div className="card p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
@@ -226,16 +213,10 @@ export default function ReceivingDonors() {
             </div>
             <div>
               <div className="font-display font-bold text-base text-navy uppercase tracking-wide">
-                Receiving Donor Intake
-              </div>
-              <div className="text-[11px] text-slate-400">
-                Search donor &gt; Identify categories &gt; Restock inventory
+                Incoming Donation Intake
               </div>
             </div>
           </div>
-          <span className="badge badge-eligible text-xs px-2.5 py-1">
-            <i className="fas fa-barcode mr-1.5" />Auto Restocks Inventory
-          </span>
         </div>
 
         <form onSubmit={handleSave} className="space-y-5">
@@ -332,16 +313,11 @@ export default function ReceivingDonors() {
               )}
             </AnimatePresence>
 
-            {/* Helper alert when entering a donor */}
-            {selectedDonor ? (
-              <div className="mt-1 text-[11px] text-emerald-700 font-medium flex items-center gap-1.5">
-                <i className="fas fa-check-circle text-emerald-600" />
-                <span>Selected: <strong>{selectedDonor.name || selectedDonor.org_name}</strong> ({selectedDonor.donor_code || 'Registered Donor'})</span>
-              </div>
-            ) : donorQuery.trim() && suggestions.length === 0 && (
+            {/* Notice when entering a new unregistered donor */}
+            {!selectedDonor && donorQuery.trim() && suggestions.length === 0 && (
               <div className="mt-1 text-[11px] text-blue-600 flex items-center gap-1.5">
                 <i className="fas fa-plus-circle" />
-                <span>New donor will be automatically recorded as <strong>"{donorQuery.trim()}"</strong></span>
+                <span>New donor will be recorded as <strong>"{donorQuery.trim()}"</strong></span>
               </div>
             )}
           </div>
@@ -577,9 +553,8 @@ export default function ReceivingDonors() {
 
           {/* Form Actions: Bottom-right [SAVE] button */}
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-            <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
-              <i className="fas fa-circle-check text-emerald-600" />
-              <span>Saving records the batch, updates donor donation date, and restocks inventory.</span>
+            <div className="text-[11px] text-slate-400">
+              * Required fields
             </div>
             <button
               type="submit"
@@ -605,7 +580,6 @@ export default function ReceivingDonors() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-display font-bold text-base text-navy">Recent Receiving Batches</h2>
-            <p className="text-xs text-slate-400">Chronological history of received donations</p>
           </div>
           <div className="relative w-full sm:w-64">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />

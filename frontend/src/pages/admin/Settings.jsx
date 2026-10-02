@@ -872,14 +872,11 @@ export default function AdminSettings() {
             <div className="card p-5 bg-gradient-to-r from-blue-900 to-navy text-white relative overflow-hidden shadow-sm">
               <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-white/10 text-white/90 text-[10px] font-bold uppercase tracking-wider border border-white/15">
-                    <i className="fas fa-boxes-packing text-blue-300" /> Administrative Relief Policy
-                  </div>
                   <h2 className="font-display font-black text-xl text-white tracking-tight">
                     Relief Goods Package Templates
                   </h2>
                   <p className="text-xs text-blue-100/80 max-w-2xl leading-relaxed">
-                    Configure baseline relief items per sector based on live warehouse stock. Changes persist in the database and automatically synchronize across all Staff desk distribution terminals.
+                    Configure baseline relief items issued per sector.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -948,9 +945,6 @@ export default function AdminSettings() {
                     {activePkgSectorObj?.name} Relief Package
                     <span className="text-xs text-slate-400 font-normal">({pkgItems.length} items)</span>
                   </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Items below will be issued by default when staff select this sector during desk distribution.
-                  </p>
                 </div>
                 <button
                   type="button"
@@ -1123,11 +1117,6 @@ export default function AdminSettings() {
                   <i className="fas fa-vault mr-1.5 text-amber-600" />
                   Backup Vault ({(puroks || []).filter(p => p.is_archived).length})
                 </button>
-              </div>
-
-              <div className="text-[11px] text-slate-500 font-semibold px-2 hidden sm:block">
-                <i className="fas fa-shield-halved text-emerald-600 mr-1" />
-                Households are 100% preserved during archiving.
               </div>
             </div>
 

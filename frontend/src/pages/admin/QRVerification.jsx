@@ -256,26 +256,17 @@ export default function AdminQRVerification() {
       <div className="flex items-center justify-between mb-4 gap-2">
         <div className="min-w-0">
           <h1 className="font-display font-bold text-lg sm:text-xl text-navy">QR Code Scanner</h1>
-          <p className="text-slate-500 text-xs mt-0.5 hidden sm:block">Scan beneficiary QR code to verify & distribute relief goods.</p>
         </div>
 
-        {activeCycles.length > 0 ? (
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-xs flex-shrink-0">
-            <i className="fas fa-arrows-rotate text-emerald-600 text-xs" />
-            <select
-              value={activeCycle?.id}
-              onChange={(e) => setSelectedCycleId(e.target.value)}
-              className="bg-transparent border-none text-xs font-bold text-emerald-800 focus:ring-0 cursor-pointer pr-3"
-            >
-              {activeCycles.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+        {activeCycle ? (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-2xs flex-shrink-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-bold text-emerald-900 truncate max-w-[240px]">
+              {activeCycle.name}
+            </span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl flex-shrink-0">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl flex-shrink-0">
             <i className="fas fa-pause text-slate-400 text-xs" />
             <span className="text-xs font-bold text-slate-500">No Active Cycle</span>
           </div>
@@ -309,7 +300,7 @@ export default function AdminQRVerification() {
                   </div>
                   <div className="text-xs font-bold text-white mb-1">Camera Scanner Ready</div>
                   <div className="text-[11px] text-slate-400 max-w-xs">
-                    Point camera at beneficiary QR code to verify instantly.
+                    Point camera at QR code
                   </div>
                 </div>
               )}

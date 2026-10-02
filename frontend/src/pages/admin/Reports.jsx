@@ -195,7 +195,6 @@ export default function AdminReports() {
           <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-50 text-red-600 text-[11px] font-bold border border-red-200 max-w-full">
             <i className="fas fa-lock text-[10px] flex-shrink-0" />
             <span className="font-bold flex-shrink-0">CONFIDENTIAL</span>
-            <span className="hidden sm:inline text-red-500 font-normal truncate">— For authorized personnel only</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -218,7 +217,7 @@ export default function AdminReports() {
       {/* Date Range Filter Controls */}
       <div className="card p-3 sm:p-3.5 mb-4 no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200">
         <div className="text-xs font-bold text-navy flex items-center gap-1.5">
-          <i className="fas fa-calendar-alt text-blue-600" /> Filter Cycle Date Range
+          <i className="fas fa-calendar-alt text-blue-600" /> Filter Date Range
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap text-xs">
           <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[130px]">

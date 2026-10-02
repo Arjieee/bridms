@@ -360,9 +360,6 @@ export default function AdminDashboard() {
                 <div className="text-center p-3 max-w-xs">
                   <i className="fas fa-chart-column text-2xl text-slate-300 mb-1.5 block" />
                   <div className="text-xs font-bold text-slate-600">No Distribution Records Yet</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 leading-snug">
-                    Distributions recorded in operations will automatically plot here.
-                  </div>
                 </div>
               </div>
             )}

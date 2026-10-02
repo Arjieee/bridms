@@ -114,7 +114,7 @@ export default function AdminSuppliers() {
         <div>
           <h1 className="font-display font-extrabold text-2xl text-navy">Suppliers & Donors Directory</h1>
           <div className="section-sub">
-            {filteredSuppliers.length} registered donor{filteredSuppliers.length !== 1 ? 's' : ''} (Information Only)
+            {filteredSuppliers.length} registered donor{filteredSuppliers.length !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
@@ -144,18 +144,6 @@ export default function AdminSuppliers() {
         </div>
       </div>
 
-      {/* Info Notice Banner */}
-      <div className="no-print p-3.5 bg-blue-50/80 rounded-xl border border-blue-200/80 flex items-center justify-between text-xs text-blue-900">
-        <div className="flex items-center gap-2.5">
-          <i className="fas fa-circle-info text-blue-600 text-sm" />
-          <span>
-            This module displays <strong>donors information only</strong>. To record incoming relief goods or donated items, please use the <strong>Receiving Donors</strong> module.
-          </span>
-        </div>
-        <a href="/admin/receiving" className="font-bold text-blue-700 hover:text-blue-900 underline whitespace-nowrap hidden md:inline-block">
-          Go to Receiving Donors <i className="fas fa-arrow-right ml-1" />
-        </a>
-      </div>
 
       {/* Donors Content Section */}
       <div>

@@ -137,7 +137,7 @@ export default function AdminBeneficiaries() {
             <i className="fas fa-house-user" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Households:</div>
+            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Households</div>
             <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalHouseholdsCount}</div>
           </div>
         </div>
@@ -146,7 +146,7 @@ export default function AdminBeneficiaries() {
             <i className="fas fa-users" />
           </div>
           <div className="min-w-0">
-            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Residents:</div>
+            <div className="text-[10px] text-slate-500 font-semibold leading-tight truncate">Total Residents</div>
             <div className="font-display font-extrabold text-sm text-navy leading-tight">{totalResidentsCount}</div>
           </div>
         </div>
