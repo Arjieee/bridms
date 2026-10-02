@@ -55,19 +55,22 @@ async function seedDemoData() {
     });
   }
 
-  // 4. Warehouse Inventory Items & Stock
+  // 4. Warehouse Inventory Items & Stock (Separated by Donor Attribution)
   const inventoryItems = [
-    { id: 1, item_code: 'INV-001', name: 'Canned Sardines', category_id: 1, unit: 'cans', quantity: 1250, low_threshold: 50, critical_threshold: 20 },
-    { id: 2, item_code: 'INV-002', name: 'Rice', category_id: 1, unit: 'sacks', quantity: 65, low_threshold: 15, critical_threshold: 5 },
-    { id: 3, item_code: 'INV-003', name: 'Instant Noodles', category_id: 1, unit: 'packs', quantity: 1800, low_threshold: 100, critical_threshold: 30 },
-    { id: 4, item_code: 'INV-004', name: 'Bottled Water 1L', category_id: 1, unit: 'bottles', quantity: 720, low_threshold: 50, critical_threshold: 20 },
-    { id: 5, item_code: 'INV-005', name: 'Rice', category_id: 1, unit: 'kg', quantity: 2850, low_threshold: 200, critical_threshold: 50 },
-    { id: 6, item_code: 'INV-006', name: 'Canned Corned Beef', category_id: 1, unit: 'cans', quantity: 820, low_threshold: 40, critical_threshold: 15 },
-    { id: 7, item_code: 'INV-007', name: 'Hygiene Kit', category_id: 4, unit: 'pcs', quantity: 450, low_threshold: 30, critical_threshold: 10 },
-    { id: 8, item_code: 'INV-008', name: 'Bottled Water (500ml)', category_id: 1, unit: 'bottles', quantity: 1100, low_threshold: 100, critical_threshold: 30 },
-    { id: 9, item_code: 'INV-009', name: 'Paracetamol 500mg', category_id: 3, unit: 'boxes', quantity: 180, low_threshold: 25, critical_threshold: 10 },
-    { id: 10, item_code: 'INV-010', name: 'Thermal Blanket', category_id: 2, unit: 'pcs', quantity: 320, low_threshold: 20, critical_threshold: 5 },
-    { id: 11, item_code: 'INV-011', name: 'First Aid Emergency Kit', category_id: 3, unit: 'sets', quantity: 110, low_threshold: 15, critical_threshold: 5 },
+    { id: 1, item_code: 'INV-001', name: 'Canned Sardines', category_id: 1, unit: 'cans', quantity: 1250, low_threshold: 50, critical_threshold: 20, donor_id: 'dn-002', donor_name: 'DSWD Field Office Region X', is_repacked: false },
+    { id: 2, item_code: 'INV-002', name: 'Rice', category_id: 1, unit: 'sacks', quantity: 40, low_threshold: 15, critical_threshold: 5, donor_id: 'dn-002', donor_name: 'DSWD Field Office Region X', is_repacked: false },
+    { id: 3, item_code: 'INV-003', name: 'Instant Noodles', category_id: 1, unit: 'packs', quantity: 1800, low_threshold: 100, critical_threshold: 30, donor_id: 'dn-001', donor_name: 'Philippine Red Cross - CDO Chapter', is_repacked: false },
+    { id: 4, item_code: 'INV-004', name: 'Bottled Water 1L', category_id: 1, unit: 'bottles', quantity: 720, low_threshold: 50, critical_threshold: 20, donor_id: 'dn-005', donor_name: 'San Miguel Foods Corporation', is_repacked: false },
+    { id: 5, item_code: 'INV-005', name: 'Rice', category_id: 1, unit: 'kg', quantity: 1500, low_threshold: 200, critical_threshold: 50, donor_id: 'dn-002', donor_name: 'DSWD Field Office Region X', is_repacked: true, source_item_id: 2 },
+    { id: 6, item_code: 'INV-006', name: 'Canned Corned Beef', category_id: 1, unit: 'cans', quantity: 820, low_threshold: 40, critical_threshold: 15, donor_id: 'dn-003', donor_name: 'CDRRMD - Cagayan de Oro City', is_repacked: false },
+    { id: 7, item_code: 'INV-007', name: 'Hygiene Kit', category_id: 4, unit: 'pcs', quantity: 450, low_threshold: 30, critical_threshold: 10, donor_id: 'dn-001', donor_name: 'Philippine Red Cross - CDO Chapter', is_repacked: false },
+    { id: 8, item_code: 'INV-008', name: 'Bottled Water (500ml)', category_id: 1, unit: 'bottles', quantity: 1100, low_threshold: 100, critical_threshold: 30, donor_id: 'dn-008', donor_name: 'Aboitiz Foundation Inc.', is_repacked: false },
+    { id: 9, item_code: 'INV-009', name: 'Paracetamol 500mg', category_id: 3, unit: 'boxes', quantity: 180, low_threshold: 25, critical_threshold: 10, donor_id: 'dn-003', donor_name: 'CDRRMD - Cagayan de Oro City', is_repacked: false },
+    { id: 10, item_code: 'INV-010', name: 'Thermal Blanket', category_id: 2, unit: 'pcs', quantity: 320, low_threshold: 20, critical_threshold: 5, donor_id: 'dn-004', donor_name: 'GMA Kapuso Foundation', is_repacked: false },
+    { id: 11, item_code: 'INV-011', name: 'First Aid Emergency Kit', category_id: 3, unit: 'sets', quantity: 110, low_threshold: 15, critical_threshold: 5, donor_id: 'dn-001', donor_name: 'Philippine Red Cross - CDO Chapter', is_repacked: false },
+    { id: 12, item_code: 'INV-012', name: 'Rice', category_id: 1, unit: 'sacks', quantity: 25, low_threshold: 15, critical_threshold: 5, donor_id: 'dn-003', donor_name: 'City Government of Cagayan de Oro (LGU)', is_repacked: false },
+    { id: 13, item_code: 'INV-013', name: 'Rice', category_id: 1, unit: 'kg', quantity: 800, low_threshold: 200, critical_threshold: 50, donor_id: 'dn-003', donor_name: 'City Government of Cagayan de Oro (LGU)', is_repacked: true, source_item_id: 12 },
+    { id: 14, item_code: 'INV-014', name: 'Canned Sardines', category_id: 1, unit: 'cans', quantity: 600, low_threshold: 50, critical_threshold: 20, donor_id: 'dn-003', donor_name: 'City Government of Cagayan de Oro (LGU)', is_repacked: false },
   ];
 
   for (const item of inventoryItems) {
@@ -80,11 +83,15 @@ async function seedDemoData() {
         quantity: item.quantity,
         low_threshold: item.low_threshold,
         critical_threshold: item.critical_threshold,
+        donor_id: item.donor_id,
+        donor_name: item.donor_name,
+        is_repacked: item.is_repacked,
+        source_item_id: item.source_item_id || null,
       },
       create: item,
     });
   }
-  console.log('✅ Inventory items & stock verified (11 items with ample quantities).');
+  console.log('✅ Inventory items & stock verified (14 items separated by Donor & Repack status).');
 
   // 5. StockLedger Intake History
   const ledgerCount = await prisma.stockLedger.count();

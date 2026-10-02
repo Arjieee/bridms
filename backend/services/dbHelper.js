@@ -120,6 +120,7 @@ export const adjustStock = async (itemId, qty, type, remarks, metadata = {}) => 
           balance_after: newQty,
           description: remarks || (type === 'in' ? 'Stock In' : 'Stock Out'),
           reference_id: metadata?.reference_id || null,
+          donor_name: metadata?.donor_name || item.donor_name || null,
           recorded_by: metadata?.recorded_by || null,
         },
       });

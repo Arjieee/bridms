@@ -113,35 +113,60 @@ export const recordDistribution = async (req, res) => {
 
         let targetInv = null;
         if (item.item_id) {
-          targetInv = allInv.find((inv) => inv.id === Number(item.item_id));
+          const byId = allInv.find((inv) => inv.id === Number(item.item_id));
+          if (byId) {
+            // Verify if the unit or name doesn't contradict
+            const sameName = !item.item_name || byId.name.trim().toLowerCase() === item.item_name.trim().toLowerCase();
+            const sameUnit = !item.unit || byId.unit.trim().toLowerCase() === item.unit.trim().toLowerCase();
+            if (sameName && sameUnit) {
+              targetInv = byId;
+            }
+          }
         }
 
-        // If targetInv is null or name/unit doesn't match, look up by compound key (name + unit)
-        if (
-          !targetInv ||
-          (item.item_name &&
-            item.unit &&
-            (targetInv.name.trim().toLowerCase() !== item.item_name.trim().toLowerCase() ||
-              targetInv.unit.trim().toLowerCase() !== item.unit.trim().toLowerCase()))
-        ) {
-          const matchByNameUnit = allInv.find(
-            (inv) =>
-              inv.name.trim().toLowerCase() === (item.item_name || '').trim().toLowerCase() &&
-              inv.unit.trim().toLowerCase() === (item.unit || '').trim().toLowerCase()
-          );
-          if (matchByNameUnit) {
-            targetInv = matchByNameUnit;
+        // If targetInv is not found by ID or ID had a unit mismatch (e.g., ID pointed to sacks but unit requested is kg)
+        if (!targetInv && item.item_name) {
+          const reqName = (item.item_name || '').trim().toLowerCase();
+          const reqUnit = (item.unit || '').trim().toLowerCase();
+          const reqDonor = (item.donor_name || '').trim().toLowerCase();
+
+          // 1. Try matching Name + Unit + Donor
+          if (reqDonor) {
+            targetInv = allInv.find(
+              (inv) =>
+                inv.name.trim().toLowerCase() === reqName &&
+                (!reqUnit || inv.unit.trim().toLowerCase() === reqUnit) &&
+                inv.donor_name &&
+                inv.donor_name.trim().toLowerCase() === reqDonor
+            );
+          }
+
+          // 2. Try matching Name + Unit (prioritizing is_repacked and positive quantity)
+          if (!targetInv) {
+            const matches = allInv.filter(
+              (inv) =>
+                inv.name.trim().toLowerCase() === reqName &&
+                (!reqUnit || inv.unit.trim().toLowerCase() === reqUnit)
+            );
+            if (matches.length > 0) {
+              // Prioritize repacked item if available
+              targetInv = matches.find((m) => m.is_repacked && m.quantity > 0) ||
+                          matches.find((m) => m.quantity > 0) ||
+                          matches[0];
+            }
           }
         }
 
         if (targetInv) {
+          const donorSuffix = targetInv.donor_name ? ` [Donor: ${targetInv.donor_name}]` : '';
           await adjustStock(
             targetInv.id,
             qty,
             'out',
-            `Distribution: ${hh.hh_code} - ${recipientDesc} (${cycle.name})`,
+            `Distribution: ${hh.hh_code} - ${recipientDesc} (${cycle.name})${donorSuffix}`,
             {
               reference_id: distCode,
+              donor_name: targetInv.donor_name || null,
               recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
             }
           );
@@ -150,6 +175,7 @@ export const recordDistribution = async (req, res) => {
             item_name: targetInv.name,
             quantity: qty,
             unit: targetInv.unit,
+            donor_name: targetInv.donor_name || null,
           });
         } else {
           resolvedItems.push({

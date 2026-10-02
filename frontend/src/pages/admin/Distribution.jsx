@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/appStore'
 import { useAuthStore } from '../../store/authStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
+import { resolveInventoryMatch, isBulkPackaging } from '../../utils/inventoryMatching'
 import toast from 'react-hot-toast'
 
 // Default icon/color map for system sectors
@@ -154,7 +155,14 @@ function DistributionSlipModal({ receipt, onClose, onDistributeNext }) {
                   items.map((item, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/50">
                       <td className="py-2.5 px-3.5 text-slate-500 font-mono">{idx + 1}</td>
-                      <td className="py-2.5 px-3.5 font-bold text-navy">{item.item_name}</td>
+                      <td className="py-2.5 px-3.5 font-bold text-navy">
+                        <span>{item.item_name}</span>
+                        {item.donor_name && (
+                          <span className="ml-2 text-[10px] font-normal text-slate-500 font-sans">
+                            ({item.donor_name})
+                          </span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3.5 text-right font-black text-navy font-mono text-xs">{item.quantity}</td>
                       <td className="py-2.5 px-3.5 text-slate-700 font-medium">{item.unit}</td>
                     </tr>
@@ -285,16 +293,14 @@ function DeskDistributionModal({
     }
 
     const resolved = (template || []).map(p => {
-      const invMatch = inventory.find(inv =>
-        (p.item_id && inv.id === p.item_id) ||
-        (inv.name.toLowerCase() === (p.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (p.unit || '').toLowerCase()) ||
-        inv.name.toLowerCase() === (p.item_name || '').toLowerCase()
-      )
+      const invMatch = resolveInventoryMatch(p, inventory)
       return {
         item_id: invMatch ? invMatch.id : p.item_id,
         item_name: invMatch ? invMatch.name : p.item_name,
         quantity: p.quantity ?? 1,
         unit: invMatch ? invMatch.unit : p.unit,
+        donor_name: invMatch ? invMatch.donor_name : (p.donor_name || null),
+        is_repacked: invMatch ? invMatch.is_repacked : false,
       }
     })
     setPkgItems(resolved)
@@ -409,16 +415,13 @@ function DeskDistributionModal({
     ].filter(Boolean).join(' · ')
 
     const itemsToDistribute = pkgItems.map(i => {
-      const invMatch = inventory.find(inv =>
-        (i.item_id && inv.id === i.item_id) ||
-        (inv.name.toLowerCase() === (i.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (i.unit || '').toLowerCase()) ||
-        inv.name.toLowerCase() === (i.item_name || '').toLowerCase()
-      )
+      const invMatch = resolveInventoryMatch(i, inventory)
       return {
         item_id: invMatch ? invMatch.id : i.item_id,
         item_name: invMatch ? invMatch.name : i.item_name,
         quantity: parseFloat(i.quantity) || 1,
         unit: invMatch ? invMatch.unit : i.unit,
+        donor_name: invMatch ? invMatch.donor_name : (i.donor_name || null),
       }
     })
 
@@ -845,11 +848,7 @@ function DeskDistributionModal({
                 ) : (
                   <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                     {pkgItems.map((item, idx) => {
-                      const invMatch = inventory.find(
-                        inv => (item.item_id && inv.id === item.item_id) ||
-                               (inv.name.toLowerCase() === item.item_name.toLowerCase() && inv.unit.toLowerCase() === (item.unit || '').toLowerCase()) ||
-                               inv.name.toLowerCase() === item.item_name.toLowerCase()
-                      )
+                      const invMatch = resolveInventoryMatch(item, inventory)
                       const stockAvailable = invMatch ? invMatch.quantity : 0
                       const isOutOfStock = stockAvailable <= 0
                       const isLow = !isOutOfStock && stockAvailable < (parseFloat(item.quantity) || 0)
@@ -857,18 +856,33 @@ function DeskDistributionModal({
                       return (
                         <div
                           key={idx}
-                          className={`flex items-center justify-between gap-2 p-2 rounded-xl border text-xs ${
+                          className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border text-xs ${
                             isOutOfStock ? 'bg-red-50/60 border-red-200' : isLow ? 'bg-amber-50/60 border-amber-200' : 'bg-slate-50 border-slate-200'
                           }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="font-bold text-navy truncate flex items-center gap-1">
+                            <div className="font-bold text-navy truncate flex items-center gap-1.5 flex-wrap">
                               <span>{item.item_name}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-blue-100/80 text-blue-700 text-[10px] font-bold">
+                                {item.unit}
+                              </span>
+                              {invMatch?.donor_name && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`Donor: ${invMatch.donor_name}`}>
+                                  <i className="fas fa-hand-holding-heart text-[8px]" />
+                                  <span>{invMatch.donor_name}</span>
+                                </span>
+                              )}
+                              {invMatch?.is_repacked && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Repacked distribution unit">
+                                  <i className="fas fa-boxes-packing text-[8px]" />
+                                  <span>Repacked</span>
+                                </span>
+                              )}
                               {isOutOfStock && (
                                 <span className="text-[9px] font-bold px-1 rounded bg-red-100 text-red-700">Out of Stock</span>
                               )}
                             </div>
-                            <div className="text-[10px] mt-0.5">
+                            <div className="text-[10px] mt-1">
                               {isOutOfStock ? (
                                 <span className="text-red-600 font-bold flex items-center gap-1">
                                   <i className="fas fa-triangle-exclamation" /> 0 {item.unit} in warehouse!
@@ -914,30 +928,62 @@ function DeskDistributionModal({
                 {/* Dropdown to add more items from Inventory */}
                 <div className="flex gap-2">
                   <select
-                    className="form-input text-xs py-1.5 rounded-xl flex-1 bg-white border-slate-200"
+                    className="form-input text-xs py-2 rounded-xl flex-1 bg-white border-slate-200 text-slate-700 font-medium"
                     value={newItemId}
                     onChange={e => {
                       const id = e.target.value
                       if (!id) return
                       const invItem = inventory.find(inv => String(inv.id) === String(id))
                       if (invItem) {
-                        const existingIdx = pkgItems.findIndex(it =>
-                          String(it.item_id) === String(invItem.id) ||
-                          (it.item_name.toLowerCase() === invItem.name.toLowerCase() && it.unit.toLowerCase() === invItem.unit.toLowerCase())
+                        const exactIdx = pkgItems.findIndex(it =>
+                          it.item_id === invItem.id ||
+                          (it.item_name.toLowerCase() === invItem.name.toLowerCase() &&
+                           it.unit.toLowerCase() === invItem.unit.toLowerCase() &&
+                           (it.donor_name || '') === (invItem.donor_name || ''))
                         )
-                        if (existingIdx >= 0) {
-                          setPkgItems(p => p.map((it, i) => i === existingIdx ? { ...it, quantity: Number(it.quantity) + 1 } : it))
+
+                        if (exactIdx >= 0) {
+                          setPkgItems(p => p.map((it, i) => i === exactIdx ? { ...it, quantity: Number(it.quantity) + 1 } : it))
+                          toast.success(`Incremented quantity for ${invItem.name} [${invItem.unit}]`)
                         } else {
-                          setPkgItems(p => [...p, { item_id: invItem.id, item_name: invItem.name, quantity: 1, unit: invItem.unit }])
+                          // Check if there is an item with the same name but bulk packaging (e.g. Rice sacks vs Rice kg)
+                          const bulkIdx = pkgItems.findIndex(it =>
+                            it.item_name.toLowerCase() === invItem.name.toLowerCase() &&
+                            isBulkPackaging(it.unit) &&
+                            !isBulkPackaging(invItem.unit)
+                          )
+
+                          if (bulkIdx >= 0) {
+                            // Automatically swap bulk unit with distribution repacked unit
+                            setPkgItems(p => p.map((it, i) => i === bulkIdx ? {
+                              item_id: invItem.id,
+                              item_name: invItem.name,
+                              quantity: p[bulkIdx].quantity || 1,
+                              unit: invItem.unit,
+                              donor_name: invItem.donor_name || null,
+                              is_repacked: invItem.is_repacked || false,
+                            } : it))
+                            toast.success(`Replaced bulk ${pkgItems[bulkIdx].unit} with repacked ${invItem.unit} (${invItem.donor_name || 'Warehouse'})`)
+                          } else {
+                            setPkgItems(p => [...p, {
+                              item_id: invItem.id,
+                              item_name: invItem.name,
+                              quantity: 1,
+                              unit: invItem.unit,
+                              donor_name: invItem.donor_name || null,
+                              is_repacked: invItem.is_repacked || false,
+                            }])
+                            toast.success(`Added ${invItem.name} [${invItem.unit}] to package`)
+                          }
                         }
                       }
                       setNewItemId('')
                     }}
                   >
-                    <option value="">+ Add Item from Warehouse Stock...</option>
+                    <option value="">+ Add / Select Item from Warehouse Stock...</option>
                     {inventory.map(inv => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.name} [{inv.unit}] ({inv.quantity} in stock)
+                        {inv.name} [{inv.unit}] ({inv.quantity} in stock) — {inv.donor_name || 'General Stock'}{inv.is_repacked ? ' [Repacked Goods]' : isBulkPackaging(inv.unit) ? ' [Bulk Sacks/Cases]' : ''}
                       </option>
                     ))}
                   </select>

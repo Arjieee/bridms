@@ -241,30 +241,37 @@ export const createReceiving = async (req, res) => {
         continue;
       }
 
-      // Check if inventory item already exists with matching name AND unit
+      // Check if inventory item already exists with matching name AND unit AND donor
       let invItem = null;
       if (rawItem.item_id) {
         const potential = await prisma.inventoryItem.findUnique({
           where: { id: Number(rawItem.item_id) },
         });
-        if (potential && potential.unit.trim().toLowerCase() === uom.toLowerCase()) {
+        if (
+          potential &&
+          potential.unit.trim().toLowerCase() === uom.toLowerCase() &&
+          ((potential.donor_id && potential.donor_id === targetDonor.id) ||
+            (!potential.donor_id && (!potential.donor_name || potential.donor_name === targetDonor.name)))
+        ) {
           invItem = potential;
         }
       }
 
       if (!invItem) {
-        // Match by BOTH exact name AND exact unit (case-insensitive)
+        // Match by exact name AND exact unit AND specific donor (donor_id or donor_name)
         const allItems = await prisma.inventoryItem.findMany();
         invItem = allItems.find(
           (i) =>
             i.name.trim().toLowerCase() === itemName.toLowerCase() &&
-            i.unit.trim().toLowerCase() === uom.toLowerCase()
+            i.unit.trim().toLowerCase() === uom.toLowerCase() &&
+            (i.donor_id === targetDonor.id ||
+              (i.donor_name && i.donor_name.trim().toLowerCase() === targetDonor.name.trim().toLowerCase()))
         );
       }
 
       let updatedItem = null;
       if (invItem) {
-        // Increment stock and record in StockLedger
+        // Increment stock and record in StockLedger with donor attribution
         updatedItem = await adjustStock(
           invItem.id,
           qty,
@@ -272,11 +279,12 @@ export const createReceiving = async (req, res) => {
           `Received from Donor: ${targetDonor.name} (+${qty} ${invItem.unit})`,
           {
             reference_id: receiveCode,
+            donor_name: targetDonor.name,
             recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
           }
         );
       } else {
-        // Create new inventory item with the identified category
+        // Create new inventory item attributed specifically to this donor
         const maxItem = await prisma.inventoryItem.findFirst({
           orderBy: { id: 'desc' },
           select: { id: true },
@@ -295,10 +303,13 @@ export const createReceiving = async (req, res) => {
             quantity: qty,
             low_threshold: 15,
             critical_threshold: 5,
+            donor_id: targetDonor.id,
+            donor_name: targetDonor.name,
+            is_repacked: false,
           },
         });
 
-        // Record initial StockLedger entry
+        // Record initial StockLedger entry with donor_name
         await prisma.stockLedger.create({
           data: {
             id: 'ledg-' + shortId() + Math.random().toString(36).substr(2, 3),
@@ -310,6 +321,7 @@ export const createReceiving = async (req, res) => {
             balance_after: qty,
             description: `Initial Stock from Donor: ${targetDonor.name}`,
             reference_id: receiveCode,
+            donor_name: targetDonor.name,
             recorded_by: req.user?.username || req.user?.full_name || req.user?.id,
           },
         });

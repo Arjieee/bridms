@@ -49,6 +49,7 @@ function StockLedgerModal({ item, onClose }) {
   const handleExportLedgerCSV = () => {
     const headers = [
       { label: 'Date', key: 'date' },
+      { label: 'Donor Attribution', key: 'donor_name' },
       { label: 'Description', key: 'description' },
       { label: 'Type', key: 'type' },
       { label: 'Quantity Changed', key: 'qty' },
@@ -57,6 +58,7 @@ function StockLedgerModal({ item, onClose }) {
     ]
     const rows = ledger.map(l => ({
       date: new Date(l.date).toLocaleDateString(),
+      donor_name: l.donor_name || item.donor_name || 'General Stock',
       description: l.description,
       type: l.type?.toUpperCase(),
       qty: (l.qty > 0 ? '+' : '') + l.qty,
@@ -78,13 +80,25 @@ function StockLedgerModal({ item, onClose }) {
             <div className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
               Stock Ledger &amp; Running Balance
             </div>
-            <h2 className="font-display font-black text-2xl text-navy uppercase tracking-tight flex items-center gap-2">
+            <h2 className="font-display font-black text-2xl text-navy uppercase tracking-tight flex items-center gap-2 flex-wrap">
               <span>{item.name}</span>
               <span className="text-blue-600 text-base font-bold bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200">
                 {item.unit}
               </span>
+              {item.donor_name && (
+                <span className="text-indigo-700 text-xs font-bold bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-200 flex items-center gap-1.5 shadow-2xs">
+                  <i className="fas fa-hand-holding-heart text-indigo-500" />
+                  <span>{item.donor_name}</span>
+                </span>
+              )}
+              {item.is_repacked && (
+                <span className="text-amber-700 text-xs font-bold bg-amber-50 px-2.5 py-0.5 rounded-lg border border-amber-200 flex items-center gap-1.5 shadow-2xs">
+                  <i className="fas fa-boxes-packing text-amber-500" />
+                  <span>Repacked Goods</span>
+                </span>
+              )}
             </h2>
-            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 flex-wrap">
               <span className="font-mono font-semibold text-slate-600">{item.item_code}</span>
               <span>·</span>
               <span>Unit: <strong className="text-navy">{item.unit}</strong></span>
@@ -118,8 +132,8 @@ function StockLedgerModal({ item, onClose }) {
             <table className="w-full text-xs text-left">
               <thead className="bg-slate-50/90 text-slate-500 font-bold border-b border-slate-200 sticky top-0 uppercase">
                 <tr>
-                  <th className="py-3 px-4 w-[22%]">Date</th>
-                  <th className="py-3 px-4 w-[43%]">Description</th>
+                  <th className="py-3 px-4 w-[20%]">Date</th>
+                  <th className="py-3 px-4 w-[45%]">Description &amp; Origin</th>
                   <th className="py-3 px-4 w-[17%] text-right">Qty</th>
                   <th className="py-3 px-4 w-[18%] text-right">R. Bal</th>
                 </tr>
@@ -141,11 +155,19 @@ function StockLedgerModal({ item, onClose }) {
                         <div className="font-semibold text-navy leading-snug">
                           {entry.description}
                         </div>
-                        {entry.recorded_by && (
-                          <div className="text-[10px] text-slate-400 mt-0.5">
-                            By: {entry.recorded_by}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {entry.donor_name && (
+                            <span className="text-[10px] text-indigo-600 font-semibold bg-indigo-50 px-1.5 py-0.2 rounded border border-indigo-100 flex items-center gap-1">
+                              <i className="fas fa-hand-holding-heart text-[9px]" />
+                              <span>{entry.donor_name}</span>
+                            </span>
+                          )}
+                          {entry.recorded_by && (
+                            <span className="text-[10px] text-slate-400">
+                              By: {entry.recorded_by}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <span className={`inline-block font-bold text-xs ${
@@ -281,6 +303,7 @@ function RepackModal({ item, allInventory, onClose }) {
     (i) =>
       i.name.trim().toLowerCase() === item.name.trim().toLowerCase() &&
       i.unit.trim().toLowerCase() === cleanTargetUnit &&
+      (i.donor_id === item.donor_id || (!i.donor_id && !item.donor_id)) &&
       i.id !== item.id
   )
 
@@ -333,7 +356,7 @@ function RepackModal({ item, allInventory, onClose }) {
               Convert {item.name}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Break down bulk packaging into distribution units for relief distribution.
+              Break down bulk packaging into relief distribution units while preserving donor traceability.
             </p>
           </div>
           <button
@@ -347,19 +370,31 @@ function RepackModal({ item, allInventory, onClose }) {
         {/* Source Item Badge Box */}
         <div className="mt-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-base shadow-xs shrink-0">
               <i className="fas fa-box" />
             </div>
             <div>
-              <div className="font-bold text-navy text-sm">{item.name}</div>
-              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-mono">
+              <div className="font-bold text-navy text-sm flex items-center gap-2 flex-wrap">
+                <span>{item.name}</span>
+                <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-700 font-bold text-[10px]">
+                  {item.unit}
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 font-mono mt-0.5 flex-wrap">
                 <span>{item.item_code}</span>
                 <span>·</span>
-                <span>Bulk Unit: <strong className="text-navy">{item.unit}</strong></span>
+                {item.donor_name ? (
+                  <span className="text-indigo-700 font-semibold flex items-center gap-1">
+                    <i className="fas fa-hand-holding-heart text-[10px]" />
+                    <span>Donor: {item.donor_name}</span>
+                  </span>
+                ) : (
+                  <span>General Stock</span>
+                )}
               </div>
             </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Available</div>
             <div className="text-base font-extrabold text-navy font-mono">
               {item.quantity} <span className="text-xs font-semibold text-slate-500">{item.unit}</span>
@@ -505,10 +540,10 @@ function RepackModal({ item, allInventory, onClose }) {
           </div>
 
           {/* Conversion Live Impact Box */}
-          <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2">
+          <div className="p-3.5 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2.5">
             <div className="text-[11px] font-bold text-blue-900 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <i className="fas fa-arrow-right-arrow-left text-blue-600" /> Stock Ledger Impact Preview
+                <i className="fas fa-arrow-right-arrow-left text-blue-600" /> Stock Ledger &amp; Donor Traceability Preview
               </span>
               <span className="text-[10px] uppercase font-mono bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
                 Live
@@ -518,6 +553,9 @@ function RepackModal({ item, allInventory, onClose }) {
               <div className="bg-white p-2.5 rounded-lg border border-blue-100 shadow-2xs">
                 <div className="text-[10px] text-slate-500 font-semibold uppercase">Source Deduction</div>
                 <div className="font-bold text-navy text-xs truncate">{item.name} [{item.unit}]</div>
+                <div className="text-[10px] text-indigo-600 truncate mt-0.5 font-medium">
+                  {item.donor_name || 'General Inventory'}
+                </div>
                 <div className="flex items-center justify-between mt-1 text-xs font-mono">
                   <span className="text-slate-500">{item.quantity}</span>
                   <span className="text-red-500 font-bold">-{numSourceQty}</span>
@@ -531,6 +569,9 @@ function RepackModal({ item, allInventory, onClose }) {
                 <div className="font-bold text-navy text-xs truncate">
                   {item.name} [{cleanTargetUnit || '...'}]
                 </div>
+                <div className="text-[10px] text-indigo-600 truncate mt-0.5 font-medium">
+                  {item.donor_name || 'General Inventory'}
+                </div>
                 <div className="flex items-center justify-between mt-1 text-xs font-mono">
                   <span className="text-slate-500">
                     {existingTarget ? existingTarget.quantity : 0}
@@ -542,11 +583,20 @@ function RepackModal({ item, allInventory, onClose }) {
                 </div>
               </div>
             </div>
+
+            {/* Donor Traceability Notice */}
+            <div className="text-[11px] text-indigo-950 bg-indigo-50/80 border border-indigo-200/80 p-2.5 rounded-lg flex items-start gap-2">
+              <i className="fas fa-shield-halved text-indigo-600 mt-0.5 text-xs shrink-0" />
+              <div className="leading-snug">
+                <span className="font-bold">Donor Segregation Preserved:</span> Repacked units are designated under <strong>{item.donor_name || 'General Stock'}</strong> (flagged as <em>Repacked Goods</em>) and remain distinct from other donors&apos; stock.
+              </div>
+            </div>
+
             {!existingTarget && cleanTargetUnit && (
-              <div className="text-[10px] text-blue-700 bg-blue-100/50 p-1.5 rounded flex items-center gap-1">
-                <i className="fas fa-info-circle" />
+              <div className="text-[10px] text-blue-700 bg-blue-100/50 p-2 rounded flex items-center gap-1.5">
+                <i className="fas fa-info-circle text-xs shrink-0" />
                 <span>
-                  A new inventory item record for <strong>{item.name} [{cleanTargetUnit}]</strong> will be automatically created under this category.
+                  A new inventory item record for <strong>{item.name} [{cleanTargetUnit}]</strong> ({item.donor_name || 'General Stock'}) will be automatically created under this category.
                 </span>
               </div>
             )}
@@ -589,17 +639,32 @@ function RepackModal({ item, allInventory, onClose }) {
 export default function AdminInventory() {
   const { inventory, categories, addCategory } = useAppStore()
   const [selectedCat, setSelectedCat] = useState(null)
+  const [selectedDonor, setSelectedDonor] = useState('ALL')
+  const [filterType, setFilterType] = useState('ALL') // 'ALL', 'BULK', 'REPACKED'
   const [viewingLedgerItem, setViewingLedgerItem] = useState(null)
   const [repackingItem, setRepackingItem] = useState(null)
   const [showAddCat, setShowAddCat] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [newCat, setNewCat] = useState({ name: '', icon: 'fa-box', color: '#1a56db' })
 
+  // Extract unique donors from current inventory
+  const uniqueDonors = Array.from(
+    new Set(inventory.map(i => i.donor_name).filter(Boolean))
+  ).sort()
+
   const rawItems = selectedCat ? inventory.filter(i => i.category_id === selectedCat.id) : inventory
   const items = rawItems.filter(item => {
+    if (selectedDonor !== 'ALL') {
+      if (item.donor_name !== selectedDonor) return false
+    }
+    if (filterType === 'BULK') {
+      if (!isBulkPackaging(item.unit)) return false
+    } else if (filterType === 'REPACKED') {
+      if (!item.is_repacked) return false
+    }
     if (searchQuery) {
       const catName = categories.find(c => c.id === item.category_id)?.name || ''
-      const targetFields = [item.name, item.item_code, item.unit, catName]
+      const targetFields = [item.name, item.item_code, item.unit, catName, item.donor_name || '']
       if (!fuzzyMatch(targetFields, searchQuery)) return false
     }
     return true
@@ -617,6 +682,8 @@ export default function AdminInventory() {
     const headers = [
       { label: 'Item Code', key: 'item_code' },
       { label: 'Item Name', key: 'name' },
+      { label: 'Donor / Agency', key: 'donor_name' },
+      { label: 'Repacked Status', key: 'repacked_status' },
       { label: 'Category', key: 'category_name' },
       { label: 'Quantity in Stock', key: 'quantity' },
       { label: 'Unit', key: 'unit' },
@@ -632,6 +699,8 @@ export default function AdminInventory() {
       return {
         item_code: i.item_code || `INV-${i.id}`,
         name: i.name,
+        donor_name: i.donor_name || 'General Stock',
+        repacked_status: i.is_repacked ? 'Yes (Repacked)' : 'No (Original)',
         category_name: cat?.name || 'General',
         quantity: i.quantity,
         unit: i.unit,
@@ -645,24 +714,44 @@ export default function AdminInventory() {
 
   return (
     <div>
-      <div className="section-header mb-5">
+      {/* Header and Quick Actions */}
+      <div className="section-header mb-4">
         <div>
           <h1 className="font-display font-extrabold text-2xl text-navy">Relief Goods Inventory</h1>
           <div className="section-sub">
-            {items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`} · Stock is restocked via Receiving Donors
+            {items.length} item{items.length !== 1 ? 's' : ''}{selectedCat && ` in ${selectedCat.name}`} · Stock segregated by contributing donor for audit compliance
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          {/* Search Box */}
           <div className="relative min-w-[160px] sm:min-w-[200px]">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
             <input
               type="text"
-              placeholder="Search inventory item..."
+              placeholder="Search item or donor..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="form-input text-xs pl-8 py-2 w-full rounded-xl bg-white border-slate-200"
             />
           </div>
+
+          {/* Donor Filter Dropdown */}
+          <div className="relative min-w-[150px] sm:min-w-[180px]">
+            <select
+              value={selectedDonor}
+              onChange={e => setSelectedDonor(e.target.value)}
+              className="form-input text-xs py-2 w-full rounded-xl bg-white border-slate-200 text-slate-700 font-semibold cursor-pointer"
+              title="Filter by Donating Institution / LGU"
+            >
+              <option value="ALL">🏛 All Donors ({uniqueDonors.length})</option>
+              {uniqueDonors.map(donor => (
+                <option key={donor} value={donor}>
+                  {donor}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer" title="Export Inventory to CSV">
             <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span className="hidden sm:inline">Export CSV</span>
           </button>
@@ -676,8 +765,55 @@ export default function AdminInventory() {
         </div>
       </div>
 
+      {/* Summary KPI Cards Strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0">
+            <i className="fas fa-boxes-stacked" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inventory Lines</div>
+            <div className="text-xl font-extrabold text-navy font-mono">{inventory.length}</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg shrink-0">
+            <i className="fas fa-hand-holding-heart" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Donors</div>
+            <div className="text-xl font-extrabold text-navy font-mono">{uniqueDonors.length}</div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg shrink-0">
+            <i className="fas fa-boxes-packing" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Repacked Items</div>
+            <div className="text-xl font-extrabold text-navy font-mono">
+              {inventory.filter(i => i.is_repacked).length}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg shrink-0">
+            <i className="fas fa-dolly" />
+          </div>
+          <div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Bulk Sacks/Cases</div>
+            <div className="text-xl font-extrabold text-navy font-mono">
+              {inventory.filter(i => isBulkPackaging(i.unit)).length}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Category Filter Pills */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-5">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4">
         <div className={`cat-card ${!selectedCat ? 'active' : ''}`} onClick={() => setSelectedCat(null)}>
           <i className="fas fa-border-all text-2xl mb-1" style={{ color: !selectedCat ? '#1a56db' : '#94a3b8' }} />
           <div className="font-display font-bold text-xs text-center" style={{ color: !selectedCat ? '#1a56db' : '#475569' }}>
@@ -702,6 +838,61 @@ export default function AdminInventory() {
         })}
       </div>
 
+      {/* Packaging & Donor Sub-Filter Bar */}
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2 text-xs">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setFilterType('ALL')}
+            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
+              filterType === 'ALL'
+                ? 'bg-navy text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            All Packaging
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterType('BULK')}
+            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              filterType === 'BULK'
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <i className="fas fa-box" />
+            <span>Bulk / Convertibles ({inventory.filter(i => isBulkPackaging(i.unit)).length})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setFilterType('REPACKED')}
+            className={`px-3 py-1.5 rounded-lg font-bold text-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              filterType === 'REPACKED'
+                ? 'bg-amber-600 text-white shadow-xs'
+                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <i className="fas fa-boxes-packing" />
+            <span>Repacked Goods ({inventory.filter(i => i.is_repacked).length})</span>
+          </button>
+        </div>
+
+        {selectedDonor !== 'ALL' && (
+          <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-200 text-indigo-800 px-3 py-1 rounded-lg text-xs">
+            <span className="font-semibold">Filtered by: <strong>{selectedDonor}</strong></span>
+            <button
+              type="button"
+              onClick={() => setSelectedDonor('ALL')}
+              className="text-indigo-500 hover:text-indigo-900 font-bold ml-1 cursor-pointer"
+              title="Clear donor filter"
+            >
+              <i className="fas fa-times" />
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Inventory Table with Stock Ledger & Repack Modal Triggers */}
       <AnimatePresence mode="wait">
         <motion.div key={selectedCat?.id ?? 'all'}
@@ -711,22 +902,30 @@ export default function AdminInventory() {
           {items.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-slate-400">
               <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
-              <div className="text-sm font-semibold text-slate-600">No items in this category</div>
+              <div className="text-sm font-semibold text-slate-600">No items match this filter</div>
               <div className="text-xs text-slate-400 mt-1 max-w-xs">
-                To add relief goods to this category, record an incoming shipment in{' '}
-                <Link to="/admin/receiving" className="text-blue-600 underline font-semibold">
-                  Receiving Donors
-                </Link>.
+                {selectedDonor !== 'ALL' ? (
+                  <span>
+                    No inventory recorded from <strong>{selectedDonor}</strong> under this category.
+                  </span>
+                ) : (
+                  <span>
+                    To add relief goods to this category, record an incoming shipment in{' '}
+                    <Link to="/admin/receiving" className="text-blue-600 underline font-semibold">
+                      Receiving Donors
+                    </Link>.
+                  </span>
+                )}
               </div>
             </div>
           ) : (
             <table className="tbl w-full text-left">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
-                  <th className="w-[46%] text-left pl-5 py-3.5">Item</th>
+                  <th className="w-[44%] text-left pl-5 py-3.5">Item &amp; Donor Attribution</th>
                   <th className="w-[26%] text-left py-3.5">Stock in Hand</th>
                   <th className="w-[14%] text-left py-3.5">Status</th>
-                  <th className="w-[14%] text-right pr-5 py-3.5">Actions</th>
+                  <th className="w-[16%] text-right pr-5 py-3.5">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -755,6 +954,34 @@ export default function AdminInventory() {
                           </span>
                           <span className="text-[10px] text-slate-400 font-mono">({item.item_code})</span>
                         </div>
+
+                        {/* Donor and Repack Attribution Badges */}
+                        <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                          {item.donor_name ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 shadow-2xs"
+                              title={`Donated by ${item.donor_name}`}
+                            >
+                              <i className="fas fa-hand-holding-heart text-[9px] text-indigo-500" />
+                              <span>{item.donor_name}</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                              <span>General Stock</span>
+                            </span>
+                          )}
+
+                          {item.is_repacked && (
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs"
+                              title="Repacked from bulk units for relief distribution"
+                            >
+                              <i className="fas fa-boxes-packing text-[9px] text-amber-600" />
+                              <span>Repacked Goods</span>
+                            </span>
+                          )}
+                        </div>
+
                         <Calc item={item} />
                       </td>
                       <td
@@ -764,6 +991,11 @@ export default function AdminInventory() {
                         title={`Click to view ${item.name} Stock Ledger history`}
                       >
                         <span className="font-bold text-navy text-sm">{display}</span>
+                        {item.is_repacked && (
+                          <div className="text-[10px] text-amber-700 font-medium mt-0.5">
+                            Ready for relief packaging
+                          </div>
+                        )}
                       </td>
                       <td
                         data-label="Status"
@@ -776,7 +1008,7 @@ export default function AdminInventory() {
                             : <span className="badge badge-sufficient">OK</span>}
                       </td>
                       <td data-label="Actions" className="text-right pr-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end gap-1.5">
                           {isBulkPackaging(item.unit) ? (
                             <button
                               type="button"
@@ -791,8 +1023,16 @@ export default function AdminInventory() {
                               <i className="fas fa-boxes-packing text-[11px]" />
                               <span>Repack</span>
                             </button>
+                          ) : item.is_repacked ? (
+                            <span
+                              className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-md inline-flex items-center gap-1"
+                              title="Repacked distribution units ready for family packs"
+                            >
+                              <i className="fas fa-check-circle text-[10px]" />
+                              <span>Ready</span>
+                            </span>
                           ) : (
-                            <span className="text-xs text-slate-300 select-none px-2" title="Individual distribution unit (not bulk)">
+                            <span className="text-xs text-slate-300 select-none px-2" title="Standard distribution unit">
                               —
                             </span>
                           )}

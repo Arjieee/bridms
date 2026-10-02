@@ -313,16 +313,18 @@ export const repackItem = async (req, res) => {
       });
     }
 
-    // Find or create target item (matching sourceItem.name and targetUnit)
+    // Find or create target item (matching sourceItem.name, targetUnit, and same donor attribution)
     const allItems = await prisma.inventoryItem.findMany();
     let targetItem = allItems.find(
       (i) =>
         i.name.trim().toLowerCase() === sourceItem.name.trim().toLowerCase() &&
-        i.unit.trim().toLowerCase() === targetUnit
+        i.unit.trim().toLowerCase() === targetUnit &&
+        i.donor_id === sourceItem.donor_id
     );
 
     const repackRef = 'RPK-' + Date.now().toString().slice(-8);
     const userIdentifier = req.user?.username || req.user?.full_name || 'Staff';
+    const donorLabel = sourceItem.donor_name ? ` (Donor: ${sourceItem.donor_name})` : '';
 
     if (!targetItem) {
       const maxItem = await prisma.inventoryItem.findFirst({
@@ -342,6 +344,10 @@ export const repackItem = async (req, res) => {
           quantity: 0,
           low_threshold: 15,
           critical_threshold: 5,
+          donor_id: sourceItem.donor_id || null,
+          donor_name: sourceItem.donor_name || null,
+          is_repacked: true,
+          source_item_id: sourceItem.id,
         },
       });
     }
@@ -351,9 +357,10 @@ export const repackItem = async (req, res) => {
       sourceItem.id,
       sourceQty,
       'out',
-      `Repacked: -${sourceQty} ${sourceItem.unit} → +${yieldQty} ${targetUnit}${remarks ? ` (${remarks.trim()})` : ''}`,
+      `Repacked: -${sourceQty} ${sourceItem.unit} → +${yieldQty} ${targetUnit}${donorLabel}${remarks ? ` (${remarks.trim()})` : ''}`,
       {
         reference_id: repackRef,
+        donor_name: sourceItem.donor_name || null,
         recorded_by: userIdentifier,
       }
     );
@@ -363,9 +370,10 @@ export const repackItem = async (req, res) => {
       targetItem.id,
       yieldQty,
       'in',
-      `Repack Yield: +${yieldQty} ${targetUnit} (from ${sourceQty} ${sourceItem.unit})${remarks ? ` (${remarks.trim()})` : ''}`,
+      `Repack Yield: +${yieldQty} ${targetUnit} (from ${sourceQty} ${sourceItem.unit})${donorLabel}${remarks ? ` (${remarks.trim()})` : ''}`,
       {
         reference_id: repackRef,
+        donor_name: sourceItem.donor_name || null,
         recorded_by: userIdentifier,
       }
     );

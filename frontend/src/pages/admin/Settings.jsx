@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/appStore'
 import { fuzzyMatch } from '../../utils/fuzzySearch'
 import { exportToCsv } from '../../utils/csvExport'
+import { resolveInventoryMatch, isBulkPackaging } from '../../utils/inventoryMatching'
 import PasswordStrengthMeter, { checkStrength } from '../../components/ui/PasswordStrengthMeter'
 import toast from 'react-hot-toast'
 
@@ -120,16 +121,14 @@ export default function AdminSettings() {
   useEffect(() => {
     const rawItems = standardPackages[pkgSector] || standardPackages['household'] || []
     const resolved = rawItems.map(p => {
-      const invMatch = (inventory || []).find(inv =>
-        (p.item_id && inv.id === p.item_id) ||
-        (inv.name.toLowerCase() === (p.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (p.unit || '').toLowerCase()) ||
-        inv.name.toLowerCase() === (p.item_name || '').toLowerCase()
-      )
+      const invMatch = resolveInventoryMatch(p, inventory)
       return {
         item_id: invMatch ? invMatch.id : p.item_id,
         item_name: invMatch ? invMatch.name : p.item_name,
         quantity: p.quantity ?? 1,
         unit: invMatch ? invMatch.unit : p.unit,
+        donor_name: invMatch ? invMatch.donor_name : (p.donor_name || null),
+        is_repacked: invMatch ? invMatch.is_repacked : false,
       }
     })
     setPkgItems(resolved)
@@ -149,18 +148,40 @@ export default function AdminSettings() {
     if (!invItem) return
 
     setPkgItems(prev => {
-      const existingIdx = prev.findIndex(p =>
-        String(p.item_id) === String(invItem.id) ||
-        (p.item_name.toLowerCase() === invItem.name.toLowerCase() && p.unit.toLowerCase() === invItem.unit.toLowerCase())
+      const exactIdx = prev.findIndex(p =>
+        p.item_id === invItem.id ||
+        (p.item_name.toLowerCase() === invItem.name.toLowerCase() &&
+         p.unit.toLowerCase() === invItem.unit.toLowerCase() &&
+         (p.donor_name || '') === (invItem.donor_name || ''))
       )
-      if (existingIdx >= 0) {
-        return prev.map((p, idx) => idx === existingIdx ? { ...p, quantity: Number(p.quantity) + 1 } : p)
+      if (exactIdx >= 0) {
+        return prev.map((p, idx) => idx === exactIdx ? { ...p, quantity: Number(p.quantity) + 1 } : p)
       }
+
+      // Check if there is an existing item with the same name in bulk packaging (e.g. sacks vs kg)
+      const bulkIdx = prev.findIndex(p =>
+        p.item_name.toLowerCase() === invItem.name.toLowerCase() &&
+        isBulkPackaging(p.unit) &&
+        !isBulkPackaging(invItem.unit)
+      )
+      if (bulkIdx >= 0) {
+        return prev.map((p, idx) => idx === bulkIdx ? {
+          item_id: invItem.id,
+          item_name: invItem.name,
+          quantity: p[bulkIdx].quantity || 1,
+          unit: invItem.unit,
+          donor_name: invItem.donor_name || null,
+          is_repacked: invItem.is_repacked || false,
+        } : p)
+      }
+
       return [...prev, {
         item_id: invItem.id,
         item_name: invItem.name,
         quantity: 1,
         unit: invItem.unit,
+        donor_name: invItem.donor_name || null,
+        is_repacked: invItem.is_repacked || false,
       }]
     })
     setPkgNewItemId('')
@@ -952,11 +973,7 @@ export default function AdminSettings() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {pkgItems.map((it, idx) => {
-                    const invMatch = (inventory || []).find(inv =>
-                      (it.item_id && inv.id === it.item_id) ||
-                      (inv.name.toLowerCase() === (it.item_name || '').toLowerCase() && inv.unit.toLowerCase() === (it.unit || '').toLowerCase()) ||
-                      inv.name.toLowerCase() === (it.item_name || '').toLowerCase()
-                    )
+                    const invMatch = resolveInventoryMatch(it, inventory)
                     const stockQty = invMatch ? invMatch.quantity : 0
                     const isOutOfStock = stockQty <= 0
                     const isLowStock = !isOutOfStock && stockQty < (parseFloat(it.quantity) || 1)
@@ -974,8 +991,23 @@ export default function AdminSettings() {
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-navy text-sm truncate">{it.item_name}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-blue-100/80 text-blue-700 text-[10px] font-bold">
+                                {it.unit}
+                              </span>
+                              {invMatch?.donor_name && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200" title={`Donor: ${invMatch.donor_name}`}>
+                                  <i className="fas fa-hand-holding-heart text-[8px]" />
+                                  <span>{invMatch.donor_name}</span>
+                                </span>
+                              )}
+                              {invMatch?.is_repacked && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Repacked distribution stock">
+                                  <i className="fas fa-boxes-packing text-[8px]" />
+                                  <span>Repacked</span>
+                                </span>
+                              )}
                               {isOutOfStock ? (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-red-700 flex items-center gap-1">
                                   <i className="fas fa-triangle-exclamation text-[9px]" /> Out of Stock
@@ -995,6 +1027,9 @@ export default function AdminSettings() {
                               <strong className={isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-700' : 'text-emerald-700'}>
                                 {stockQty} {it.unit}
                               </strong>
+                              {invMatch?.donor_name && (
+                                <span className="text-[10px] text-slate-400">· {invMatch.donor_name}</span>
+                              )}
                             </div>
                           </div>
 
@@ -1046,7 +1081,7 @@ export default function AdminSettings() {
                     <option value="">+ Select Item from Live Warehouse Stock...</option>
                     {(inventory || []).map(inv => (
                       <option key={inv.id} value={inv.id}>
-                        {inv.name} [{inv.unit}] — {inv.quantity} available in warehouse {inv.quantity === 0 ? '(OUT OF STOCK)' : ''}
+                        {inv.name} [{inv.unit}] ({inv.quantity} in stock) — {inv.donor_name || 'General Stock'}{inv.is_repacked ? ' [Repacked Goods]' : isBulkPackaging(inv.unit) ? ' [Bulk Sacks/Cases]' : ''}
                       </option>
                     ))}
                   </select>

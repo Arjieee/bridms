@@ -75,10 +75,15 @@ model InventoryItem {
   quantity           Float    @default(0)
   low_threshold      Float    @default(15)
   critical_threshold Float    @default(5)
+  donor_id           String?
+  donor_name         String?
+  is_repacked        Boolean  @default(false)
+  source_item_id     Int?
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
   @@index([category_id])
+  @@index([donor_id])
 }
 
 model Household {
@@ -350,6 +355,7 @@ model StockLedger {
   balance_after Float
   description   String
   reference_id  String?
+  donor_name    String?
   recorded_by   String?
   created_at    DateTime @default(now())
 
