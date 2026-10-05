@@ -205,8 +205,8 @@ export default function ReceivingDonors() {
 
 
       {/* Main Receiving Form Card */}
-      <div className="card p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
-        <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+      <div className="card p-3.5 sm:p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+        <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 mb-4 sm:mb-5">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
               <i className="fas fa-hand-holding-heart text-base" />
@@ -481,6 +481,23 @@ export default function ReceivingDonors() {
                     )}
                   </div>
 
+                  {/* Mobile Row Header: Item # and Remove Button */}
+                  <div className="col-span-12 flex sm:hidden items-center justify-between pb-1.5 mb-0.5 border-b border-slate-200/60">
+                    <span className="text-[11px] font-bold text-navy uppercase tracking-wide">
+                      Item #{idx + 1}
+                    </span>
+                    {items.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeItemRow(idx)}
+                        className="text-red-500 hover:text-red-700 text-xs font-semibold flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-red-50 cursor-pointer"
+                      >
+                        <i className="fas fa-trash-can text-[11px]" />
+                        <span>Remove</span>
+                      </button>
+                    )}
+                  </div>
+
                   {/* Quantity */}
                   <div className="col-span-6 sm:col-span-2">
                     <label className="text-[10px] font-bold text-navy uppercase mb-1 block">
@@ -499,7 +516,7 @@ export default function ReceivingDonors() {
                   </div>
 
                   {/* UOM - Unit of Measure */}
-                  <div className="col-span-4 sm:col-span-2">
+                  <div className="col-span-6 sm:col-span-2">
                     <label className="text-[10px] font-bold text-navy uppercase mb-1 block">
                       UOM <span className="text-red-500">*</span>
                     </label>
@@ -519,15 +536,15 @@ export default function ReceivingDonors() {
                     </datalist>
                   </div>
 
-                  {/* Delete button */}
-                  <div className="col-span-2 sm:col-span-1 flex flex-col items-center justify-end">
+                  {/* Desktop Delete button */}
+                  <div className="hidden sm:flex sm:col-span-1 flex-col items-center justify-end">
                     <label className="text-[10px] text-transparent select-none mb-1 block">X</label>
                     <button
                       type="button"
                       onClick={() => removeItemRow(idx)}
                       disabled={items.length === 1}
                       title="Remove Row"
-                      className="w-8 h-8 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                      className="w-9 h-9 rounded-xl border border-slate-200 text-slate-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 flex items-center justify-center transition-colors disabled:opacity-20 disabled:hover:bg-transparent cursor-pointer"
                     >
                       <i className="fas fa-trash-can text-xs" />
                     </button>
@@ -552,14 +569,11 @@ export default function ReceivingDonors() {
           </div>
 
           {/* Form Actions: Bottom-right [SAVE] button */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-            <div className="text-[11px] text-slate-400">
-              * Required fields
-            </div>
+          <div className="flex items-center justify-end pt-3 border-t border-slate-100">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="btn btn-primary px-7 py-2.5 font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+              className="btn btn-primary w-full sm:w-auto px-7 py-2.5 font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>
@@ -567,7 +581,8 @@ export default function ReceivingDonors() {
                 </>
               ) : (
                 <>
-                  <i className="fas fa-floppy-disk" /> SAVE RECEIVING RECORD
+                  <i className="fas fa-floppy-disk" />
+                  <span>SAVE RECEIVING RECORD <span className="text-red-400 font-black ml-0.5">*</span></span>
                 </>
               )}
             </button>
@@ -576,7 +591,7 @@ export default function ReceivingDonors() {
       </div>
 
       {/* Recent Receiving Transactions Table */}
-      <div className="card p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+      <div className="card p-3.5 sm:p-6 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h2 className="font-display font-bold text-base text-navy">Recent Receiving Batches</h2>
@@ -593,25 +608,16 @@ export default function ReceivingDonors() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div>
           {filteredReceivings.length === 0 ? (
             <div className="py-12 text-center text-slate-400">
               <i className="fas fa-box-open text-3xl mb-2 block text-slate-300" />
               <div className="text-sm">No receiving records found</div>
             </div>
           ) : (
-            <table className="tbl w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Batch Code</th>
-                  <th className="py-3 px-4">Donor / Supplier</th>
-                  <th className="py-3 px-4">Items Received</th>
-                  <th className="py-3 px-4">Received By</th>
-                  <th className="py-3 px-4 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+            <>
+              {/* MOBILE CARDS VIEW (< sm) */}
+              <div className="sm:hidden divide-y divide-slate-100">
                 {filteredReceivings.map((batch) => {
                   const donor = batch.donor
                   const dateStr = new Date(batch.date || batch.created_at).toLocaleDateString('en-US', {
@@ -620,54 +626,119 @@ export default function ReceivingDonors() {
                     year: 'numeric',
                   })
                   return (
-                    <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="py-3.5 px-4 font-semibold text-slate-600 whitespace-nowrap">
-                        {dateStr}
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-600 whitespace-nowrap">
-                        {batch.receive_code}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-navy">{donor?.name || 'Anonymous Donor'}</div>
-                        <span className="text-[10px] text-slate-400 capitalize">
-                          {donor?.donor_type || 'organization'}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="space-y-1">
-                          {(batch.items || []).slice(0, 2).map((it, idx) => (
-                            <span
-                              key={idx}
-                              className="inline-block mr-1.5 mb-1 px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-navy text-[11px]"
-                            >
-                              +{it.quantity} {it.uom} {it.item_name}
-                            </span>
-                          ))}
-                          {(batch.items || []).length > 2 && (
-                            <span className="text-[10px] text-slate-400">
-                              +{(batch.items || []).length - 2} more
-                            </span>
-                          )}
+                    <div key={batch.id} className="py-3.5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-mono font-bold text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                            {batch.receive_code}
+                          </span>
+                          <span className="text-[11px] text-slate-400 font-medium">{dateStr}</span>
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
-                        {batch.received_by || 'Staff'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
                         <button
                           type="button"
                           onClick={() => setSelectedBatch(batch)}
-                          className="btn btn-outline btn-xs px-2.5"
-                          title="View Details"
+                          className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1 text-[11px]"
                         >
-                          <i className="fas fa-eye mr-1" /> View
+                          <i className="fas fa-eye text-[10px]" /> View
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="font-bold text-navy truncate">
+                          {donor?.name || 'Anonymous Donor'}
+                        </div>
+                        <span className="text-[10px] text-slate-400 capitalize">
+                          {donor?.donor_type || 'organization'}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1 pt-1">
+                        {(batch.items || []).map((it, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-navy text-[11px]"
+                          >
+                            +{it.quantity} {it.uom} {it.item_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )
                 })}
-              </tbody>
-            </table>
+              </div>
+
+              {/* DESKTOP TABLE VIEW (>= sm) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="tbl w-full text-left">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
+                      <th className="py-3 px-4">Date</th>
+                      <th className="py-3 px-4">Batch Code</th>
+                      <th className="py-3 px-4">Donor / Supplier</th>
+                      <th className="py-3 px-4">Items Received</th>
+                      <th className="py-3 px-4">Received By</th>
+                      <th className="py-3 px-4 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {filteredReceivings.map((batch) => {
+                      const donor = batch.donor
+                      const dateStr = new Date(batch.date || batch.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                      return (
+                        <tr key={batch.id} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="py-3.5 px-4 font-semibold text-slate-600 whitespace-nowrap">
+                            {dateStr}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono font-bold text-blue-600 whitespace-nowrap">
+                            {batch.receive_code}
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-navy">{donor?.name || 'Anonymous Donor'}</div>
+                            <span className="text-[10px] text-slate-400 capitalize">
+                              {donor?.donor_type || 'organization'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="space-y-1">
+                              {(batch.items || []).slice(0, 2).map((it, idx) => (
+                                <span
+                                  key={idx}
+                                  className="inline-block mr-1.5 mb-1 px-2 py-0.5 rounded-md bg-slate-100 font-semibold text-navy text-[11px]"
+                                >
+                                  +{it.quantity} {it.uom} {it.item_name}
+                                </span>
+                              ))}
+                              {(batch.items || []).length > 2 && (
+                                <span className="text-[10px] text-slate-400">
+                                  +{(batch.items || []).length - 2} more
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-slate-500 whitespace-nowrap">
+                            {batch.received_by || 'Staff'}
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBatch(batch)}
+                              className="btn btn-outline btn-xs px-2.5"
+                              title="View Details"
+                            >
+                              <i className="fas fa-eye mr-1" /> View
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -681,7 +752,7 @@ export default function ReceivingDonors() {
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="card p-6 w-full max-w-lg bg-white rounded-2xl shadow-2xl space-y-4"
+            className="card p-4 sm:p-6 w-full max-w-lg bg-white rounded-2xl shadow-2xl space-y-4"
           >
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
@@ -717,7 +788,7 @@ export default function ReceivingDonors() {
 
             <div>
               <div className="text-xs font-bold text-navy mb-2">Items Received & Restocked</div>
-              <div className="border border-slate-100 rounded-xl overflow-hidden">
+              <div className="border border-slate-100 rounded-xl overflow-x-auto">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-100">
                     <tr>

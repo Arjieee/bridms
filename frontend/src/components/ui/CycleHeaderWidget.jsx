@@ -56,7 +56,7 @@ export default function CycleHeaderWidget() {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`h-9 px-2 sm:px-3 rounded-xl border flex items-center gap-1.5 sm:gap-2 text-xs font-semibold transition-all duration-200 shadow-xs ${
+        className={`h-8 sm:h-9 px-1.5 sm:px-3 rounded-xl border flex items-center gap-1 sm:gap-2 text-[11px] sm:text-xs font-semibold transition-all duration-200 shadow-xs ${
           activeCycle?.is_active
             ? 'bg-blue-50/90 hover:bg-blue-100 border-blue-200/80 text-blue-900'
             : 'bg-slate-100 hover:bg-slate-200/80 border-slate-200 text-slate-700'
@@ -68,7 +68,7 @@ export default function CycleHeaderWidget() {
             activeCycle?.is_active ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'
           }`}
         />
-        <span className="font-display font-bold max-w-[65px] sm:max-w-[140px] md:max-w-[180px] truncate">
+        <span className="font-display font-bold max-w-[44px] min-[380px]:max-w-[70px] sm:max-w-[140px] md:max-w-[180px] truncate">
           {activeCycle ? activeCycle.name : (
             <>
               <span className="sm:hidden">No Cycle</span>
@@ -82,7 +82,7 @@ export default function CycleHeaderWidget() {
           </span>
         )}
         <i
-          className={`fas fa-chevron-down text-[9px] transition-transform duration-200 ${
+          className={`fas fa-chevron-down text-[8px] sm:text-[9px] transition-transform duration-200 ${
             open ? 'rotate-180 text-blue-600' : 'text-slate-400'
           }`}
         />
@@ -96,7 +96,7 @@ export default function CycleHeaderWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 mt-2 w-72 sm:w-84 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden"
+            className="absolute right-[-4.5rem] sm:right-0 mt-2 w-[calc(100vw-24px)] max-w-xs sm:w-84 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden"
           >
             {/* Header */}
             <div className="p-3.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">

@@ -102,13 +102,17 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs text-slate-500 mb-5">Enter your account details to receive a 6-digit verification reset code.</p>
 
                 <div className="form-group">
-                  <label className="form-label">Username *</label>
+                  <label className="form-label">
+                    Username <span className="text-red-500">*</span>
+                  </label>
                   <input className="form-input" value={username}
                     onChange={e => setUsername(e.target.value)}
                     placeholder="Your account username" autoFocus />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Registered Email or Phone Number *</label>
+                  <label className="form-label">
+                    Registered Email or Phone Number <span className="text-red-500">*</span>
+                  </label>
                   <input type="text" className="form-input" value={email}
                     onChange={e => setEmail(e.target.value)}
                     placeholder="Registered email address or contact number" />
@@ -129,13 +133,17 @@ export default function ForgotPasswordPage() {
                 <p className="text-xs text-slate-500 mb-5">Check your registered email inbox or phone for the 6-digit verification code.</p>
 
                 <div className="form-group">
-                  <label className="form-label">Reset Code *</label>
+                  <label className="form-label">
+                    Reset Code <span className="text-red-500">*</span>
+                  </label>
                   <input className="form-input text-center font-mono text-lg tracking-widest"
                     value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     placeholder="000000" maxLength={6} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">New Password *</label>
+                  <label className="form-label">
+                    New Password <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <input type={showPw ? 'text' : 'password'} className="form-input pr-10"
                       value={newPassword} onChange={e => setNewPassword(e.target.value)} />
@@ -147,7 +155,9 @@ export default function ForgotPasswordPage() {
                   <PasswordStrengthMeter password={newPassword} />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Confirm New Password *</label>
+                  <label className="form-label">
+                    Confirm New Password <span className="text-red-500">*</span>
+                  </label>
                   <input type="password" className="form-input"
                     value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} />
                   {confirmPassword && (

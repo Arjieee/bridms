@@ -476,7 +476,9 @@ export default function BeneficiaryDashboard() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
-                    <label className="form-label">First Name *</label>
+                    <label className="form-label">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input className="form-input" value={memberForm.fname}
                       onChange={e => setMemberForm(f => ({ ...f, fname: e.target.value }))} autoFocus />
                   </div>
@@ -487,19 +489,25 @@ export default function BeneficiaryDashboard() {
                       placeholder="e.g. Bantayan" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name *</label>
+                    <label className="form-label">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
                     <input className="form-input" value={memberForm.lname}
                       onChange={e => setMemberForm(f => ({ ...f, lname: e.target.value }))} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="form-group">
-                    <label className="form-label">Age *</label>
+                    <label className="form-label">
+                      Age <span className="text-red-500">*</span>
+                    </label>
                     <input type="number" min="0" className="form-input" value={memberForm.age}
                       onChange={e => setMemberForm(f => ({ ...f, age: e.target.value }))} />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Sex *</label>
+                    <label className="form-label">
+                      Sex <span className="text-red-500">*</span>
+                    </label>
                     <select className="form-input" value={memberForm.sex}
                       onChange={e => setMemberForm(f => ({ ...f, sex: e.target.value }))}>
                       <option value="">Select</option>
@@ -510,7 +518,9 @@ export default function BeneficiaryDashboard() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Relationship to Head *</label>
+                  <label className="form-label">
+                    Relationship to Head <span className="text-red-500">*</span>
+                  </label>
                   <select className="form-input" value={memberForm.relationship}
                     onChange={e => setMemberForm(f => ({ ...f, relationship: e.target.value }))}>
                     <option value="">Select</option>
@@ -531,13 +541,17 @@ export default function BeneficiaryDashboard() {
                           <i className="fas fa-circle-info mr-1" />Required for sector members
                         </div>
                         <div className="form-group">
-                          <label className="form-label">Contact Number *</label>
+                          <label className="form-label">
+                            Contact Number <span className="text-red-500">*</span>
+                          </label>
                           <input className="form-input" value={memberForm.contact}
                             onChange={e => setMemberForm(f => ({ ...f, contact: e.target.value }))}
                             placeholder="09XXXXXXXXX" maxLength={11} />
                         </div>
                         <div className="form-group">
-                          <label className="form-label">Email Address *</label>
+                          <label className="form-label">
+                            Email Address <span className="text-red-500">*</span>
+                          </label>
                           <input type="email" className="form-input" value={memberForm.email}
                             onChange={e => setMemberForm(f => ({ ...f, email: e.target.value }))} />
                         </div>
@@ -607,7 +621,9 @@ export default function BeneficiaryDashboard() {
               <div className="modal-body space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
-                    <label className="form-label">First Name *</label>
+                    <label className="form-label">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input className="form-input" value={editForm.fname}
                       onChange={e => setEditForm(f => ({ ...f, fname: e.target.value }))} />
                   </div>
@@ -618,7 +634,9 @@ export default function BeneficiaryDashboard() {
                       placeholder="e.g. Bantayan" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name *</label>
+                    <label className="form-label">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
                     <input className="form-input" value={editForm.lname}
                       onChange={e => setEditForm(f => ({ ...f, lname: e.target.value }))} />
                   </div>

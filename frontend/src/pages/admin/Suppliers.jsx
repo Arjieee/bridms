@@ -110,36 +110,45 @@ export default function AdminSuppliers() {
   return (
     <div className="confidential space-y-5">
       {/* Top Header & Actions */}
-      <div className="section-header mb-5 no-print">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5 no-print">
         <div>
-          <h1 className="font-display font-extrabold text-2xl text-navy">Suppliers & Donors Directory</h1>
+          <h1 className="font-display font-extrabold text-2xl text-navy">Suppliers &amp; Donors Directory</h1>
           <div className="section-sub">
             {filteredSuppliers.length} registered donor{filteredSuppliers.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-          <div className="relative min-w-[180px] sm:min-w-[220px]">
-            <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
+          <div className="relative flex-1 sm:w-56 min-w-[130px]">
+            <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
             <input
               type="text"
-              placeholder="Search donor name, contact, type..."
+              placeholder="Search donors..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="form-input text-xs pl-8 py-2 w-full rounded-xl bg-white border-slate-200"
+              className="form-input text-xs pl-7 pr-2 py-1.5 w-full rounded-xl bg-white border-slate-200"
             />
           </div>
-          <button onClick={handleExportCSV} className="btn btn-gray btn-sm cursor-pointer" title="Export Donors to CSV">
-            <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span className="hidden sm:inline">Export CSV</span>
+          <button
+            onClick={handleExportCSV}
+            className="w-8 h-8 rounded-xl bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+            title="Export Donors to CSV"
+            aria-label="Export Donors to CSV"
+          >
+            <i className="fas fa-file-csv text-emerald-600 text-sm" />
           </button>
           <button
             onClick={() => setShowPrintPreview(true)}
-            className="btn btn-outline btn-sm flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            className="w-8 h-8 rounded-xl bg-white border border-slate-200 hover:bg-blue-50 hover:border-blue-300 text-slate-600 hover:text-blue-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
             title="Preview and print official donors directory"
+            aria-label="Print Directory"
           >
-            <i className="fas fa-print" /> <span className="hidden sm:inline">Print</span>
+            <i className="fas fa-print text-sm text-slate-600" />
           </button>
-          <button onClick={() => setShowAdd(true)} className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm">
-            <i className="fas fa-user-plus" /> <span>Add Donor</span>
+          <button
+            onClick={() => setShowAdd(true)}
+            className="btn btn-primary btn-sm py-1.5 px-3 flex items-center gap-1.5 shadow-sm shrink-0 whitespace-nowrap cursor-pointer"
+          >
+            <i className="fas fa-user-plus text-xs" /> <span>Add Donor</span>
           </button>
         </div>
       </div>
@@ -156,10 +165,71 @@ export default function AdminSuppliers() {
           </div>
         )}
 
-        {/* Donors List (Showing ONLY: Org Name, Contact Person, Contact Number, Donation Date, Donor Type) */}
+        {/* Donors List */}
         {filteredSuppliers.length > 0 && (
           <div className="card overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
-            <div className="overflow-x-auto">
+            {/* MOBILE CARDS VIEW (< sm) */}
+            <div className="sm:hidden divide-y divide-slate-100">
+              {filteredSuppliers.map(s => {
+                const name = s.org_name || s.name
+                const phone = s.contact_number || s.contact_num || 'N/A'
+                const contact = s.contact_person || 'N/A'
+                const date = s.donation_date || 'N/A'
+                const type = s.donor_type || 'Organization'
+
+                return (
+                  <div key={s.id} className="p-3.5 space-y-2 hover:bg-slate-50/60 transition-colors">
+                    {/* Row 1: Org Name, Donor Code & Type Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-navy text-sm flex items-center gap-1.5 flex-wrap">
+                          <span>{name}</span>
+                          {s.donor_code && (
+                            <span className="text-[10px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.2 rounded border border-slate-200">
+                              {s.donor_code}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0 ${getBadgeClass(type)}`}>
+                        {type}
+                      </span>
+                    </div>
+
+                    {/* Row 2: Contact Person and Contact Phone */}
+                    <div className="flex items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-1.5 text-slate-600 min-w-0">
+                        <i className="fas fa-user text-slate-400 text-[10px] shrink-0" />
+                        <span className="truncate font-medium">{contact}</span>
+                      </div>
+
+                      {phone !== 'N/A' ? (
+                        <a
+                          href={`tel:${phone}`}
+                          className="flex items-center gap-1.5 font-mono text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 shrink-0 hover:bg-blue-100"
+                        >
+                          <i className="fas fa-phone text-[10px]" />
+                          <span>{phone}</span>
+                        </a>
+                      ) : (
+                        <span className="text-slate-400 font-mono text-[11px]">—</span>
+                      )}
+                    </div>
+
+                    {/* Row 3: Donation Date (if available) */}
+                    {date !== 'N/A' && (
+                      <div className="text-[11px] text-slate-400 flex items-center gap-1 pt-1 border-t border-slate-100">
+                        <i className="fas fa-calendar-day text-[10px]" />
+                        <span>Donation recorded: <strong className="text-slate-600">{date}</strong></span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* DESKTOP TABLE VIEW (>= sm) */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="tbl w-full text-left">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/80 text-xs text-slate-500 font-bold uppercase">
@@ -284,7 +354,9 @@ export default function AdminSuppliers() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="form-group">
-                    <label className="form-label text-xs font-bold text-navy">Donation Date</label>
+                    <label className="form-label text-xs font-bold text-navy">
+                      Donation Date <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="date"
                       className="form-input text-xs"
@@ -370,7 +442,7 @@ function SuppliersPrintPreviewModal({ suppliers, searchQuery, onClose }) {
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="card modal-box p-6 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
+        className="card modal-box p-4 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
       >
         {/* Close Button top-right */}
         <button
@@ -418,7 +490,7 @@ function SuppliersPrintPreviewModal({ suppliers, searchQuery, onClose }) {
           </div>
 
           {/* Table */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+          <div className="border border-slate-200 rounded-xl overflow-x-auto text-xs">
             <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
               <span>Registered Donors &amp; Partner Suppliers</span>
               <span className="text-slate-500 font-semibold text-[10px] normal-case">

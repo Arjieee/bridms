@@ -460,48 +460,48 @@ export default function AdminSettings() {
         </div>
 
         {['cycles', 'puroks', 'accounts'].includes(tab) && (
-          <div className="flex gap-2 items-center flex-shrink-0 justify-end">
+          <div className="hidden sm:flex gap-2 items-center flex-shrink-0 justify-end">
             {tab === 'cycles' && (
-              <button type="button" onClick={() => setShowAddCycle(true)} className="btn btn-primary btn-sm">
-                <i className="fas fa-plus" /> <span className="hidden sm:inline">New Cycle</span>
+              <button type="button" onClick={() => setShowAddCycle(true)} className="btn btn-primary btn-sm cursor-pointer">
+                <i className="fas fa-plus" /> <span>New Cycle</span>
               </button>
             )}
             {tab === 'puroks' && (
-              <button type="button" onClick={() => setShowAddPurok(true)} className="btn btn-primary btn-sm">
-                <i className="fas fa-plus" /> <span className="hidden sm:inline">Add Purok</span>
+              <button type="button" onClick={() => setShowAddPurok(true)} className="btn btn-primary btn-sm cursor-pointer">
+                <i className="fas fa-plus" /> <span>Add Purok</span>
               </button>
             )}
             {tab === 'accounts' && (
-              <button type="button" onClick={() => setShowAddStaff(true)} className="btn btn-primary btn-sm">
-                <i className="fas fa-user-plus" /> <span className="hidden sm:inline">Add Staff</span>
+              <button type="button" onClick={() => setShowAddStaff(true)} className="btn btn-primary btn-sm cursor-pointer">
+                <i className="fas fa-user-plus" /> <span>Add Staff</span>
               </button>
             )}
           </div>
         )}
       </div>
 
-      <div className="min-h-[600px] overflow-hidden">
+      <div className="min-h-[600px] overflow-hidden pb-24 sm:pb-8">
         {tab === 'registrations' && (
           <div className="space-y-4 w-full">
             {/* Control Bar: Subtabs + Search Bar */}
-            <div className="card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-wrap sm:flex-nowrap flex-shrink-0">
+            <div className="card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
                 {REG_SUBTABS.map(s => {
                   const count = totalRegsByStatus[s].length
                   const colors = { pending: 'amber', approved: 'emerald', rejected: 'red' }
                   const c = colors[s]
                   return (
                     <button key={s} type="button" onClick={() => setRegSubtab(s)}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold font-display capitalize transition-all flex items-center gap-1.5 ${
+                      className={`flex-1 sm:flex-initial px-3 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold font-display capitalize transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         regSubtab === s ? `bg-${c}-50 text-${c}-700 shadow-sm` : 'text-slate-500 hover:bg-slate-200/60'
                       }`}
                       style={regSubtab === s ? {
                         background: c === 'amber' ? '#fef3c7' : c === 'emerald' ? '#d1fae5' : '#fee2e2',
                         color:      c === 'amber' ? '#92400e' : c === 'emerald' ? '#047857' : '#b91c1c',
                       } : {}}>
-                      {s}
+                      <span>{s}</span>
                       {count > 0 && (
-                        <span className="w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0"
+                        <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-shrink-0"
                           style={{
                             background: regSubtab === s
                               ? (c === 'amber' ? '#f59e0b' : c === 'emerald' ? '#10b981' : '#ef4444')
@@ -537,35 +537,25 @@ export default function AdminSettings() {
                   </div>
                 </div>
               ) : regsByStatus[regSubtab].map(reg => (
-                <div key={reg.id} className="card p-4 hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-3">
+                <div key={reg.id} className="card p-3.5 sm:p-4 hover:shadow-md transition-shadow">
+                  {/* Card Header: Name on left, Badges on top-right */}
+                  <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="min-w-0 flex-1">
-                      <div className="font-display font-bold text-base text-navy flex items-center gap-2 flex-wrap">
-                        <span>{reg.head ? formatFormalName(reg.head) : 'N/A'}</span>
+                      <div className="font-display font-bold text-base text-navy flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate">{reg.head ? formatFormalName(reg.head) : 'N/A'}</span>
                         <span className="text-xs font-normal text-slate-400">@{reg.username}</span>
                       </div>
-                      <div className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-2 flex-wrap">
+                      <div className="text-xs text-slate-500 mt-1 font-medium flex items-center gap-1.5 flex-wrap">
                         <span><i className="fas fa-location-dot text-red-500 mr-1" />{puroks.find(p => p.id === reg.purok_id)?.name}</span>
                         <span>·</span>
                         <span><i className="fas fa-calendar text-slate-400 mr-1" />{reg.reg_date}</span>
                         <span>·</span>
                         <span className="font-semibold text-navy">{(reg.members?.length || 0) + 1} member(s)</span>
                       </div>
-                      {normalizeSectors(reg.head?.sectors).length > 0 && (
-                        <div className="flex gap-1.5 mt-2 flex-wrap">
-                          {normalizeSectors(reg.head?.sectors).map(s =>
-                            <span key={s} className={`badge badge-${s}`}>{s.replace('_', ' ').toUpperCase()}</span>
-                          )}
-                        </div>
-                      )}
-                      {regSubtab === 'rejected' && reg.rejection_reason && (
-                        <div className="mt-2.5 p-2.5 bg-red-50 rounded-xl text-xs text-red-700 border border-red-100">
-                          <strong>Reason:</strong> {reg.rejection_reason}
-                        </div>
-                      )}
                     </div>
-                    <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                      <span className={`badge ${reg.status === 'pending' ? 'badge-pending' : reg.status === 'approved' ? 'badge-approved' : 'badge-rejected'}`}>
+
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <span className={`badge capitalize ${reg.status === 'pending' ? 'badge-pending' : reg.status === 'approved' ? 'badge-approved' : 'badge-rejected'}`}>
                         {reg.status}
                       </span>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 ${
@@ -574,10 +564,31 @@ export default function AdminSettings() {
                           : 'bg-amber-100 text-amber-800 border border-amber-200'
                       }`}>
                         <i className={`fas ${reg.is_email_verified ? 'fa-check-circle text-emerald-600' : 'fa-clock text-amber-600'}`} />
-                        {reg.is_email_verified ? 'Email Verified' : 'Unverified Email'}
+                        <span>{reg.is_email_verified ? 'Email Verified' : 'Unverified'}</span>
                       </span>
                     </div>
                   </div>
+
+                  {/* Sectors Badges (sanitized keys for proper CSS badge color matching) */}
+                  {normalizeSectors(reg.head?.sectors).length > 0 && (
+                    <div className="flex gap-1.5 mb-2.5 flex-wrap">
+                      {normalizeSectors(reg.head?.sectors).map(s => {
+                        const secKey = s.toLowerCase().replace(/[\s-]+/g, '_')
+                        return (
+                          <span key={s} className={`badge badge-${secKey}`}>
+                            {s.replace('_', ' ').toUpperCase()}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {regSubtab === 'rejected' && reg.rejection_reason && (
+                    <div className="mb-2.5 p-2.5 bg-red-50 rounded-xl text-xs text-red-700 border border-red-100">
+                      <strong>Reason:</strong> {reg.rejection_reason}
+                    </div>
+                  )}
+
                   <div className="flex gap-2 flex-wrap pt-3 border-t border-slate-100">
                     <button onClick={() => setRegDetail(reg)} className="btn btn-outline btn-sm flex-1 justify-center">
                       <i className="fas fa-eye mr-1" /> View Details
@@ -604,11 +615,11 @@ export default function AdminSettings() {
             {/* Role Filter Sub-Tabs + Search Controls Bar */}
             <div className="card p-3 flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3">
               {/* Role Sub-Tabs */}
-              <div className="inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-nowrap shrink-0 overflow-x-auto max-w-full">
+              <div className="tab-scroll inline-flex items-center gap-1 bg-slate-100 p-1 rounded-xl flex-nowrap shrink-0 max-w-full select-none">
                 <button
                   type="button"
                   onClick={() => { setAccountRoleFilter('staff_admin'); setAccountPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center cursor-pointer ${
                     accountRoleFilter === 'staff_admin' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -622,7 +633,7 @@ export default function AdminSettings() {
                 <button
                   type="button"
                   onClick={() => { setAccountRoleFilter('beneficiary'); setAccountPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center cursor-pointer ${
                     accountRoleFilter === 'beneficiary' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -636,7 +647,7 @@ export default function AdminSettings() {
                 <button
                   type="button"
                   onClick={() => { setAccountRoleFilter('all'); setAccountPage(1); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold font-display transition-all whitespace-nowrap flex items-center cursor-pointer ${
                     accountRoleFilter === 'all' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
@@ -655,7 +666,7 @@ export default function AdminSettings() {
                     <select
                       value={accountPurokFilter}
                       onChange={e => { setAccountPurokFilter(e.target.value); setAccountPage(1); }}
-                      className="form-input text-xs py-1.5 px-2.5 w-32 sm:w-36 bg-white font-medium border-slate-200 rounded-xl text-slate-700 cursor-pointer flex-shrink-0"
+                      className="form-input text-xs py-1.5 px-2.5 flex-1 sm:flex-initial sm:w-36 bg-white font-medium border-slate-200 rounded-xl text-slate-700 cursor-pointer min-w-[120px]"
                     >
                       <option value="">All Puroks</option>
                       {safePuroks.map(p => (
@@ -666,7 +677,7 @@ export default function AdminSettings() {
                     <select
                       value={accountSectorFilter}
                       onChange={e => { setAccountSectorFilter(e.target.value); setAccountPage(1); }}
-                      className="form-input text-xs py-1.5 px-2.5 w-32 sm:w-36 bg-white font-medium border-slate-200 rounded-xl text-slate-700 cursor-pointer flex-shrink-0"
+                      className="form-input text-xs py-1.5 px-2.5 flex-1 sm:flex-initial sm:w-36 bg-white font-medium border-slate-200 rounded-xl text-slate-700 cursor-pointer min-w-[120px]"
                     >
                       <option value="">All Sectors</option>
                       {safeSectors.map(s => (
@@ -690,67 +701,144 @@ export default function AdminSettings() {
               </div>
             </div>
 
-            {/* Accounts Table */}
-            <div className="card mobile-card-table">
+            {/* Accounts List & Table */}
+            <div className="card overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
               {paginatedAccounts.length === 0 ? (
                 <div className="p-8 text-center text-slate-400 text-sm">
                   <i className="fas fa-users-slash text-3xl mb-2 block text-slate-300" />
                   No matching user accounts found.
                 </div>
               ) : (
-                <table className="tbl w-full table-fixed">
-                  <thead>
-                    <tr>
-                      <th className="w-[26%]">User</th>
-                      <th className="w-[14%]">Role</th>
-                      <th className="w-[24%]">Email</th>
-                      <th className="w-[14%]">Status</th>
-                      <th className="w-[22%]">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedAccounts.map(a => (
-                      <tr key={a.id} className={a.role === 'staff' ? 'cursor-pointer hover:bg-slate-50' : ''}>
-                        <td data-label="User" onClick={() => a.role === 'staff' && setStaffDetail(a)}>
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                              style={{ background: a.photo ? '#fff' : (a.role === 'admin' ? '#1a56db' : a.role === 'staff' ? '#10b981' : '#f59e0b') }}>
-                              {a.photo ? <img src={a.photo} alt="" className="w-full h-full object-cover" /> : (a.full_name?.[0] || '?')}
+                <>
+                  {/* MOBILE CARDS VIEW (< sm) */}
+                  <div className="sm:hidden divide-y divide-slate-100">
+                    {paginatedAccounts.map(a => {
+                      const linkedHh = households.find(h => h.id === a.household_id)
+                      const isStaff = a.role === 'staff'
+                      return (
+                        <div
+                          key={a.id}
+                          onClick={() => isStaff && setStaffDetail(a)}
+                          className={`p-3.5 space-y-2.5 ${isStaff ? 'cursor-pointer hover:bg-slate-50/70 transition-colors' : ''}`}
+                        >
+                          {/* Top Row: User Avatar + Name + Badges */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div
+                                className="w-8 h-8 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-2xs"
+                                style={{ background: a.photo ? '#fff' : (a.role === 'admin' ? '#1a56db' : a.role === 'staff' ? '#10b981' : '#f59e0b') }}
+                              >
+                                {a.photo ? <img src={a.photo} alt="" className="w-full h-full object-cover" /> : (a.full_name?.[0] || '?')}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-bold text-sm text-navy truncate">{a.full_name}</div>
+                                <div className="text-[11px] text-slate-400 font-mono truncate">@{a.username}</div>
+                              </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-sm text-navy truncate">{a.full_name}</div>
-                              <div className="text-[11px] text-slate-400 truncate">@{a.username}</div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className={`badge text-[10px] ${a.role === 'admin' ? 'badge-critical' : a.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
+                                {a.role}
+                              </span>
+                              <span className={`badge text-[10px] ${a.is_active ? 'badge-approved' : 'badge-rejected'}`}>
+                                {a.is_active ? 'Active' : 'Inactive'}
+                              </span>
                             </div>
                           </div>
-                        </td>
-                        <td data-label="Role" onClick={() => a.role === 'staff' && setStaffDetail(a)}>
-                          <span className={`badge ${a.role === 'admin' ? 'badge-critical' : a.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
-                            {a.role}
-                          </span>
-                        </td>
-                        <td data-label="Email" onClick={() => a.role === 'staff' && setStaffDetail(a)}>
-                          <span className="text-xs text-slate-500 truncate block">{a.email || '—'}</span>
-                        </td>
-                        <td data-label="Status" onClick={() => a.role === 'staff' && setStaffDetail(a)}>
-                          <span className={`badge ${a.is_active ? 'badge-approved' : 'badge-rejected'}`}>
-                            {a.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td data-label="Action">
-                          {a.role === 'staff' ? (
-                            <button onClick={() => setStaffDetail(a)} className="btn btn-outline btn-xs">
-                              <i className="fas fa-eye mr-1" /> View Details
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 text-xs text-slate-400 font-mono">
-                              System Acc
-                            </span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+                          {/* Middle Row: Email & Household Meta */}
+                          <div className="flex items-center justify-between text-xs text-slate-500 flex-wrap gap-1">
+                            <div className="flex items-center gap-1.5 min-w-0 truncate">
+                              <i className="fas fa-envelope text-slate-400 text-[10px] shrink-0" />
+                              <span className="truncate">{a.email || 'No email registered'}</span>
+                            </div>
+                            {linkedHh && (
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                                <span>{linkedHh.purok_name}</span>
+                                <span>·</span>
+                                <span className="font-mono text-navy font-semibold">{linkedHh.hh_code}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Bottom Row: Actions */}
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+                            {isStaff ? (
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); setStaffDetail(a); }}
+                                className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1 cursor-pointer"
+                              >
+                                <i className="fas fa-eye text-[10px]" /> View Details
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-slate-400 font-medium italic">
+                                {a.role === 'admin' ? 'Primary System Administrator' : 'Resident Portal Account'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+
+                  {/* DESKTOP TABLE VIEW (>= sm) */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="tbl w-full table-fixed">
+                      <thead>
+                        <tr>
+                          <th className="w-[26%]">User</th>
+                          <th className="w-[14%]">Role</th>
+                          <th className="w-[24%]">Email</th>
+                          <th className="w-[14%]">Status</th>
+                          <th className="w-[22%]">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedAccounts.map(a => (
+                          <tr key={a.id} className={a.role === 'staff' ? 'cursor-pointer hover:bg-slate-50' : ''}>
+                            <td onClick={() => a.role === 'staff' && setStaffDetail(a)}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                                  style={{ background: a.photo ? '#fff' : (a.role === 'admin' ? '#1a56db' : a.role === 'staff' ? '#10b981' : '#f59e0b') }}>
+                                  {a.photo ? <img src={a.photo} alt="" className="w-full h-full object-cover" /> : (a.full_name?.[0] || '?')}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="font-semibold text-sm text-navy truncate">{a.full_name}</div>
+                                  <div className="text-[11px] text-slate-400 truncate">@{a.username}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td onClick={() => a.role === 'staff' && setStaffDetail(a)}>
+                              <span className={`badge ${a.role === 'admin' ? 'badge-critical' : a.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
+                                {a.role}
+                              </span>
+                            </td>
+                            <td onClick={() => a.role === 'staff' && setStaffDetail(a)}>
+                              <span className="text-xs text-slate-500 truncate block">{a.email || '—'}</span>
+                            </td>
+                            <td onClick={() => a.role === 'staff' && setStaffDetail(a)}>
+                              <span className={`badge ${a.is_active ? 'badge-approved' : 'badge-rejected'}`}>
+                                {a.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                            <td>
+                              {a.role === 'staff' ? (
+                                <button onClick={() => setStaffDetail(a)} className="btn btn-outline btn-xs">
+                                  <i className="fas fa-eye mr-1" /> View Details
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 text-xs text-slate-400 font-mono">
+                                  System Acc
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
 
@@ -798,8 +886,9 @@ export default function AdminSettings() {
               const pct = cQRs.length > 0 ? Math.round((claimed / cQRs.length) * 100) : 0
               const isCompleted = cQRs.length > 0 && claimed === cQRs.length
               return (
-                <div key={c.id} className="card p-4">
-                  <div className="flex items-start justify-between gap-3">
+                <div key={c.id} className="card p-3.5 sm:p-4">
+                  {/* Top Row: Title, Date, Badges */}
+                  <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="font-display font-bold text-sm text-navy">{c.name}</div>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -811,33 +900,6 @@ export default function AdminSettings() {
                           Created {new Date(c.created_at).toLocaleDateString('en-PH')}
                         </span>
                       </div>
-                      <div className="mt-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs text-slate-600">
-                        <div className="flex items-center gap-2">
-                          <i className="fas fa-calendar-day text-blue-600 w-4 text-center" />
-                          <span>Claim Date: <strong>{c.distribution_date || 'Schedule Announced Soon'}</strong> ({c.distribution_time || '8:00 AM - 5:00 PM'})</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <i className="fas fa-location-dot text-emerald-600 w-4 text-center mt-0.5" />
-                          <span>Venue: <strong>{c.claim_address || 'Barangay Puerto Covered Court'}</strong></span>
-                        </div>
-                        {c.contact_person && (
-                          <div className="flex items-center gap-2">
-                            <i className="fas fa-user-tie text-purple-600 w-4 text-center" />
-                            <span>Contact: <strong>{c.contact_person}</strong></span>
-                          </div>
-                        )}
-                      </div>
-                      {cQRs.length > 0 && (
-                        <div className="mt-2">
-                          <div className="flex justify-between text-xs text-slate-500 mb-1">
-                            <span>{claimed} claimed</span>
-                            <span>{cQRs.length} total QRs</span>
-                          </div>
-                          <div className="w-full bg-slate-100 rounded-full h-1.5">
-                            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      )}
                     </div>
                     <span className={`badge flex-shrink-0 ${
                       isCompleted ? 'badge-approved' : c.is_active ? 'badge-approved' : 'badge-rejected'
@@ -845,6 +907,37 @@ export default function AdminSettings() {
                       {isCompleted ? 'Completed' : c.is_active ? 'Active' : 'Ended'}
                     </span>
                   </div>
+
+                  {/* Full-width Details Box (no empty right-hand space) */}
+                  <div className="mt-2.5 p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs text-slate-600 w-full">
+                    <div className="flex items-start gap-2">
+                      <i className="fas fa-calendar-day text-blue-600 w-4 text-center mt-0.5 shrink-0" />
+                      <span>Claim Date: <strong>{c.distribution_date || 'Schedule Announced Soon'}</strong> ({c.distribution_time || '8:00 AM - 5:00 PM'})</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <i className="fas fa-location-dot text-emerald-600 w-4 text-center mt-0.5 shrink-0" />
+                      <span>Venue: <strong>{c.claim_address || 'Barangay Puerto Covered Court'}</strong></span>
+                    </div>
+                    {c.contact_person && (
+                      <div className="flex items-start gap-2">
+                        <i className="fas fa-user-tie text-purple-600 w-4 text-center mt-0.5 shrink-0" />
+                        <span>Contact: <strong>{c.contact_person}</strong></span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Full-width Progress Bar */}
+                  {cQRs.length > 0 && (
+                    <div className="mt-2.5 w-full">
+                      <div className="flex justify-between text-xs text-slate-500 mb-1 font-medium">
+                        <span>{claimed} claimed</span>
+                        <span>{cQRs.length} total QRs</span>
+                      </div>
+                      <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )}
                   {isCompleted ? (
                     <div className="mt-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 text-center">
                       <i className="fas fa-circle-check mr-1" />
@@ -904,8 +997,8 @@ export default function AdminSettings() {
             </div>
 
             {/* Sector Category Switcher Tabs */}
-            <div className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="card p-3.5 sm:p-4 space-y-2.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <i className="fas fa-layer-group text-blue-600 text-xs" />
                   Select Sector Category:
@@ -914,7 +1007,7 @@ export default function AdminSettings() {
                   Configuring baseline package for: <strong className="text-navy">{activePkgSectorObj?.name}</strong>
                 </span>
               </div>
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+              <div className="tab-scroll flex items-center gap-2 select-none">
                 {ALL_PACKAGE_SECTORS.map(sec => {
                   const isSelected = pkgSector === sec.code
                   return (
@@ -922,7 +1015,7 @@ export default function AdminSettings() {
                       key={sec.code}
                       type="button"
                       onClick={() => setPkgSector(sec.code)}
-                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all whitespace-nowrap cursor-pointer ${
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all whitespace-nowrap cursor-pointer shrink-0 ${
                         isSelected
                           ? 'text-white shadow-sm ring-2 ring-offset-1'
                           : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -1218,116 +1311,178 @@ export default function AdminSettings() {
 
         {tab === 'activity' && (
           <div className="space-y-3">
-            <div className="card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="text-xs font-bold text-navy flex items-center gap-1.5">
-                <i className="fas fa-list-ul text-blue-600" />
-                Audit Trail Logs ({(activityLogs || []).length})
-              </div>
-              <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <div className="relative w-full sm:w-64">
-                  <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
-                  <input
-                    type="text"
-                    placeholder="Search logs by user, action, details..."
-                    value={activitySearch}
-                    onChange={e => setActivitySearch(e.target.value)}
-                    className="form-input text-xs pl-8 py-1.5 w-full rounded-xl"
-                  />
-                </div>
-                <button
-                  onClick={() => {
-                    const headers = [
-                      { label: 'Log ID', key: 'id' },
-                      { label: 'Timestamp (PST)', key: 'timestamp' },
-                      { label: 'Username', key: 'username' },
-                      { label: 'Role', key: 'role' },
-                      { label: 'Action', key: 'action' },
-                      { label: 'Details', key: 'details' },
-                      { label: 'IP Address', key: 'ip_address' },
-                      { label: 'User Agent / Device', key: 'user_agent' },
-                    ]
-                    const filteredLogs = (activityLogs || []).filter(l => {
-                      if (activitySearch.trim()) {
-                        const targetFields = [l.username, l.role, l.action, l.details]
-                        if (!fuzzyMatch(targetFields, activitySearch)) return false
-                      }
-                      return true
-                    })
-                    const rows = filteredLogs.map(l => ({
-                      id: l.id || '—',
-                      timestamp: l.login_at ? new Date(l.login_at).toLocaleString('en-PH') : '—',
-                      username: l.username || 'System',
-                      role: l.role || '—',
-                      action: (l.action || '').replace(/_/g, ' '),
-                      details: l.details || '—',
-                      ip_address: l.ip_address || '—',
-                      user_agent: l.user_agent || '—',
-                    }))
-                    exportToCsv('Audit_Trail_Logs', headers, rows)
-                  }}
-                  className="btn btn-gray btn-sm cursor-pointer whitespace-nowrap"
-                  title="Export Audit Logs to CSV"
-                >
-                  <i className="fas fa-file-csv text-emerald-600 text-sm" />
-                  <span className="hidden sm:inline">Export CSV</span>
-                </button>
-              </div>
-            </div>
+            {(() => {
+              const filteredLogs = (activityLogs || []).filter(l => {
+                if (activitySearch.trim()) {
+                  const targetFields = [l.username, l.role, l.action, l.details]
+                  if (!fuzzyMatch(targetFields, activitySearch)) return false
+                }
+                return true
+              })
 
-            <div className="card mobile-card-table">
-              <table className="tbl w-full table-fixed">
-                <thead>
-                  <tr>
-                    <th className="w-[20%]">User</th>
-                    <th className="w-[14%]">Role</th>
-                    <th className="w-[14%]">Action</th>
-                    <th className="w-[34%]">Details</th>
-                    <th className="w-[18%]">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(activityLogs || []).filter(l => {
-                    if (activitySearch.trim()) {
-                      const targetFields = [l.username, l.role, l.action, l.details]
-                      if (!fuzzyMatch(targetFields, activitySearch)) return false
-                    }
-                    return true
-                  }).length === 0 ? (
-                    <tr><td colSpan={5}>
+              return (
+                <>
+                  <div className="card p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                    <div className="text-xs font-bold text-navy flex items-center gap-1.5">
+                      <i className="fas fa-list-ul text-blue-600" />
+                      Audit Trail Logs ({filteredLogs.length})
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <div className="relative flex-1 sm:w-64 min-w-[130px]">
+                        <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
+                        <input
+                          type="text"
+                          placeholder="Search logs by user, action..."
+                          value={activitySearch}
+                          onChange={e => setActivitySearch(e.target.value)}
+                          className="form-input text-xs pl-8 pr-2 py-1.5 w-full rounded-xl"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const headers = [
+                            { label: 'Log ID', key: 'id' },
+                            { label: 'Timestamp (PST)', key: 'timestamp' },
+                            { label: 'Username', key: 'username' },
+                            { label: 'Role', key: 'role' },
+                            { label: 'Action', key: 'action' },
+                            { label: 'Details', key: 'details' },
+                            { label: 'IP Address', key: 'ip_address' },
+                            { label: 'User Agent / Device', key: 'user_agent' },
+                          ]
+                          const rows = filteredLogs.map(l => ({
+                            id: l.id || '—',
+                            timestamp: l.login_at ? new Date(l.login_at).toLocaleString('en-PH') : '—',
+                            username: l.username || 'System',
+                            role: l.role || '—',
+                            action: (l.action || '').replace(/_/g, ' '),
+                            details: l.details || '—',
+                            ip_address: l.ip_address || '—',
+                            user_agent: l.user_agent || '—',
+                          }))
+                          exportToCsv('Audit_Trail_Logs', headers, rows)
+                        }}
+                        className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+                        title="Export Audit Logs to CSV"
+                        aria-label="Export Audit Logs to CSV"
+                      >
+                        <i className="fas fa-file-csv text-emerald-600 text-sm" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Audit Logs List & Table */}
+                  <div className="card overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
+                    {filteredLogs.length === 0 ? (
                       <div className="py-8 text-center text-slate-400 text-sm">
                         <i className="fas fa-list-ul text-3xl mb-2 block text-slate-300" />
                         No matching activity logs found
                       </div>
-                    </td></tr>
-                  ) : (activityLogs || []).filter(l => {
-                    if (activitySearch.trim()) {
-                      const targetFields = [l.username, l.role, l.action, l.details]
-                      if (!fuzzyMatch(targetFields, activitySearch)) return false
-                    }
-                    return true
-                  }).slice(0, 100).map(l => (
-                    <tr key={l.id}>
-                      <td data-label="User"><div className="font-semibold text-sm">{l.username}</div></td>
-                      <td data-label="Role">
-                        <span className={`badge ${l.role === 'admin' ? 'badge-critical' : l.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
-                          {l.role}
-                        </span>
-                      </td>
-                      <td data-label="Action"><span className="chip">{l.action.replace(/_/g, ' ')}</span></td>
-                      <td data-label="Details">
-                        <span className="text-xs text-slate-600">{l.details || '—'}</span>
-                      </td>
-                      <td data-label="Time">
-                        <span className="text-xs text-slate-500">{new Date(l.login_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                    ) : (
+                      <>
+                        {/* MOBILE CARDS VIEW (< sm) */}
+                        <div className="sm:hidden divide-y divide-slate-100">
+                          {filteredLogs.slice(0, 100).map(l => (
+                            <div key={l.id} className="p-3.5 space-y-1.5 hover:bg-slate-50/70 transition-colors">
+                              {/* Row 1: Username, Role Badge & Timestamp */}
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-1.5 min-w-0">
+                                  <span className="font-bold text-sm text-navy truncate">{l.username}</span>
+                                  <span className={`badge text-[10px] ${l.role === 'admin' ? 'badge-critical' : l.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
+                                    {l.role}
+                                  </span>
+                                </div>
+                                <span className="text-[11px] text-slate-400 font-mono shrink-0 flex items-center gap-1">
+                                  <i className="fas fa-clock text-[9px]" />
+                                  {new Date(l.login_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}
+                                </span>
+                              </div>
+
+                              {/* Row 2: Action Chip & Details */}
+                              <div className="flex items-start gap-2 pt-0.5 text-xs text-slate-600">
+                                <span className="chip shrink-0 text-[10px] py-0.5">{l.action.replace(/_/g, ' ')}</span>
+                                <span className="flex-1 break-words">{l.details || '—'}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* DESKTOP TABLE VIEW (>= sm) */}
+                        <div className="hidden sm:block overflow-x-auto">
+                          <table className="tbl w-full table-fixed">
+                            <thead>
+                              <tr>
+                                <th className="w-[20%]">User</th>
+                                <th className="w-[14%]">Role</th>
+                                <th className="w-[14%]">Action</th>
+                                <th className="w-[34%]">Details</th>
+                                <th className="w-[18%]">Time</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filteredLogs.slice(0, 100).map(l => (
+                                <tr key={l.id}>
+                                  <td><div className="font-semibold text-sm">{l.username}</div></td>
+                                  <td>
+                                    <span className={`badge ${l.role === 'admin' ? 'badge-critical' : l.role === 'staff' ? 'badge-approved' : 'badge-pending'}`}>
+                                      {l.role}
+                                    </span>
+                                  </td>
+                                  <td><span className="chip">{l.action.replace(/_/g, ' ')}</span></td>
+                                  <td>
+                                    <span className="text-xs text-slate-600">{l.details || '—'}</span>
+                                  </td>
+                                  <td>
+                                    <span className="text-xs text-slate-500">{new Date(l.login_at).toLocaleString('en-PH', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )
+            })()}
           </div>
         )}
       </div>
+
+      {/* ── Mobile Floating Action Button (FAB) ── */}
+      <AnimatePresence>
+        {['cycles', 'puroks', 'accounts'].includes(tab) && (
+          <motion.div
+            key={tab}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            className="sm:hidden fixed bottom-[calc(72px+env(safe-area-inset-bottom,0px))] right-4 z-30 no-print"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (tab === 'cycles') setShowAddCycle(true)
+                else if (tab === 'accounts') setShowAddStaff(true)
+                else if (tab === 'puroks') setShowAddPurok(true)
+              }}
+              className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 active:scale-90 flex items-center justify-center cursor-pointer transition-transform"
+              title={
+                tab === 'cycles' ? 'Create New Relief Cycle' :
+                tab === 'accounts' ? 'Add Staff Account' : 'Add Purok'
+              }
+              aria-label={
+                tab === 'cycles' ? 'Create New Relief Cycle' :
+                tab === 'accounts' ? 'Add Staff Account' : 'Add Purok'
+              }
+            >
+              <i className="fas fa-plus text-2xl leading-none" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Registration Detail Modal ── */}
       {regDetail && (
@@ -1481,13 +1636,17 @@ export default function AdminSettings() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Cycle Name *</label>
+                <label className="form-label">
+                  Cycle Name <span className="text-red-500">*</span>
+                </label>
                 <input className="form-input" value={cycleForm.name}
                   onChange={e => setCycleForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Regular Household Relief Q4 2025" autoFocus />
               </div>
               <div className="form-group">
-                <label className="form-label">Cycle Type *</label>
+                <label className="form-label">
+                  Cycle Type <span className="text-red-500">*</span>
+                </label>
                 <select className="form-input" value={cycleForm.type}
                   onChange={e => setCycleForm(f => ({ ...f, type: e.target.value }))}>
                   {CYCLE_TYPES.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
@@ -1508,7 +1667,9 @@ export default function AdminSettings() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="form-group mb-0">
-                    <label className="form-label text-[11px]">Distribution Date *</label>
+                    <label className="form-label text-[11px]">
+                      Distribution Date <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="date"
                       className="form-input text-xs"
@@ -1518,7 +1679,9 @@ export default function AdminSettings() {
                   </div>
 
                   <div className="form-group mb-0">
-                    <label className="form-label text-[11px]">Claim Time Window *</label>
+                    <label className="form-label text-[11px]">
+                      Claim Time Window <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       className="form-input text-xs"
@@ -1530,7 +1693,9 @@ export default function AdminSettings() {
                 </div>
 
                 <div className="form-group mb-0">
-                  <label className="form-label text-[11px]">Claim Venue / Address *</label>
+                  <label className="form-label text-[11px]">
+                    Claim Venue / Address <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
                     className="form-input text-xs"
@@ -1624,7 +1789,9 @@ export default function AdminSettings() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Purok Name *</label>
+                <label className="form-label">
+                  Purok Name <span className="text-red-500">*</span>
+                </label>
                 <input className="form-input" value={purokForm.name}
                   onChange={e => setPurokForm(f => ({ ...f, name: e.target.value }))}
                   placeholder="e.g. Purok 6" autoFocus />
@@ -1652,7 +1819,9 @@ export default function AdminSettings() {
             </div>
             <div className="modal-body">
               <div className="form-group">
-                <label className="form-label">Purok Name *</label>
+                <label className="form-label">
+                  Purok Name <span className="text-red-500">*</span>
+                </label>
                 <input className="form-input" value={editPurokName}
                   onChange={e => setEditPurokName(e.target.value)}
                   placeholder="e.g. Purok 6" autoFocus />
@@ -1736,7 +1905,9 @@ export default function AdminSettings() {
                 Staff accounts can verify QR codes, manage inventory, and record special assistance distributions.
               </div>
               <div className="form-group">
-                <label className="form-label">Full Name *</label>
+                <label className="form-label">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
                 <input className="form-input" value={staffForm.full_name}
                   onChange={e => setStaffForm(f => ({ ...f, full_name: e.target.value }))}
                   placeholder="Juan Dela Cruz" autoFocus />
@@ -1755,19 +1926,25 @@ export default function AdminSettings() {
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Username * (6+ chars)</label>
+                <label className="form-label">
+                  Username <span className="text-red-500">*</span> (6+ chars)
+                </label>
                 <input className="form-input" value={staffForm.username}
                   onChange={e => setStaffForm(f => ({ ...f, username: e.target.value.replace(/[^a-zA-Z0-9_]/g, '') }))}
                   placeholder="staff02" />
               </div>
               <div className="form-group">
-                <label className="form-label">Password *</label>
+                <label className="form-label">
+                  Password <span className="text-red-500">*</span>
+                </label>
                 <input type="password" className="form-input" value={staffForm.password}
                   onChange={e => setStaffForm(f => ({ ...f, password: e.target.value }))} />
                 <PasswordStrengthMeter password={staffForm.password} />
               </div>
               <div className="form-group">
-                <label className="form-label">Confirm Password *</label>
+                <label className="form-label">
+                  Confirm Password <span className="text-red-500">*</span>
+                </label>
                 <input type="password" className="form-input" value={staffForm.confirm}
                   onChange={e => setStaffForm(f => ({ ...f, confirm: e.target.value }))} />
                 {staffForm.confirm && (

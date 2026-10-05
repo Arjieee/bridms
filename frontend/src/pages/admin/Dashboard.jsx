@@ -237,20 +237,20 @@ export default function AdminDashboard() {
   return (
     <div>
       <motion.div variants={stagger} initial="hidden" animate="show"
-        className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
         {statCards.map((s, i) => (
           <motion.div
             key={i}
             variants={fadeUp}
             whileHover={{ y: -4, transition: { duration: 0.2, ease: 'easeOut' } }}
-            className="stat-card group cursor-default"
+            className="stat-card group cursor-default p-2.5 sm:p-4 gap-2 sm:gap-3"
           >
-            <div className="stat-icon group-hover:scale-110 transition-transform duration-300" style={{ background: s.bg, color: s.color }}>
+            <div className="stat-icon !w-9 !h-9 sm:!w-11 sm:!h-11 text-sm sm:text-base rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300" style={{ background: s.bg, color: s.color }}>
               <i className={`fas ${s.icon}`} />
             </div>
-            <div className="min-w-0">
-              <div className="font-display font-extrabold text-xl text-navy truncate group-hover:text-blue-700 transition-colors">{s.val}</div>
-              <div className="text-[11px] text-slate-500 truncate">{s.label}</div>
+            <div className="min-w-0 flex-1">
+              <div className="font-display font-extrabold text-base sm:text-xl text-navy truncate group-hover:text-blue-700 transition-colors">{s.val}</div>
+              <div className="text-[10px] sm:text-[11px] text-slate-500 truncate">{s.label}</div>
             </div>
           </motion.div>
         ))}
@@ -295,12 +295,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* Filter Mode & Date Pickers */}
-            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 sm:gap-2 justify-end w-full sm:w-auto shrink-0 flex-nowrap">
               {chartMode === 'specific_year' && (
                 <select
                   value={selectedYear}
                   onChange={e => setSelectedYear(Number(e.target.value))}
-                  className="form-input h-8 !py-0 !px-2.5 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer flex-1 sm:flex-none">
+                  className="form-input h-8 !py-0 !pl-2.5 !pr-7 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer !w-20 shrink-0">
                   {availableYears.map(y => (
                     <option key={y} value={y}>{y}</option>
                   ))}
@@ -311,7 +311,7 @@ export default function AdminDashboard() {
                 <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(Number(e.target.value))}
-                  className="form-input h-8 !py-0 !px-2.5 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer flex-1 sm:flex-none">
+                  className="form-input h-8 !py-0 !pl-2.5 !pr-7 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer !w-20 shrink-0">
                   {MONTHS.map((m, idx) => (
                     <option key={m} value={idx}>{m}</option>
                   ))}
@@ -319,19 +319,19 @@ export default function AdminDashboard() {
               )}
 
               {chartMode === 'custom' && (
-                <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200 w-full sm:w-auto justify-between">
+                <div className="flex items-center gap-1 bg-slate-50 px-2 h-8 rounded-lg border border-slate-200 shrink-0">
                   <input
                     type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 flex-1 sm:w-28 bg-transparent border-0 focus:ring-0 cursor-pointer"
+                    className="h-full !py-0 !px-0.5 text-[11px] sm:text-xs font-semibold text-slate-800 !w-[84px] sm:!w-24 bg-transparent border-0 outline-none focus:ring-0 cursor-pointer"
                   />
-                  <span className="text-xs font-medium text-slate-400 px-1">to</span>
+                  <span className="text-[11px] sm:text-xs font-medium text-slate-400 px-0.5 select-none">to</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={e => setEndDate(e.target.value)}
-                    className="form-input h-7 !py-0 !px-1 text-xs font-semibold text-slate-800 flex-1 sm:w-28 bg-transparent border-0 focus:ring-0 cursor-pointer"
+                    className="h-full !py-0 !px-0.5 text-[11px] sm:text-xs font-semibold text-slate-800 !w-[84px] sm:!w-24 bg-transparent border-0 outline-none focus:ring-0 cursor-pointer"
                   />
                 </div>
               )}
@@ -339,7 +339,7 @@ export default function AdminDashboard() {
               <select
                 value={chartMode}
                 onChange={e => setChartMode(e.target.value)}
-                className="form-input h-8 !py-0 !px-2.5 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer flex-1 sm:flex-none">
+                className="form-input h-8 !py-0 !pl-2.5 !pr-7 text-xs font-semibold bg-slate-50 border-slate-200 rounded-lg hover:bg-white hover:border-blue-400 hover:shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 cursor-pointer !w-[126px] sm:!w-36 shrink-0">
                 <option value="year">This Year</option>
                 <option value="specific_year">Specific Year</option>
                 <option value="month">Specific Month</option>

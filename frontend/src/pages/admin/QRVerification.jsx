@@ -253,38 +253,38 @@ export default function AdminQRVerification() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4 gap-2">
-        <div className="min-w-0">
-          <h1 className="font-display font-bold text-lg sm:text-xl text-navy">QR Code Scanner</h1>
+      <div className="flex items-center justify-between mb-3.5 sm:mb-4 gap-2">
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display font-bold text-lg sm:text-xl text-navy truncate">QR Code Scanner</h1>
         </div>
 
         {activeCycle ? (
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-2xs flex-shrink-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold text-emerald-900 truncate max-w-[240px]">
+          <div className="flex items-center gap-1.5 px-2 py-0.5 sm:px-3 sm:py-1.5 bg-emerald-50 border border-emerald-200 rounded-xl shadow-2xs shrink-0 max-w-[48%] sm:max-w-none" title={activeCycle.name}>
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-900 truncate">
               {activeCycle.name}
             </span>
           </div>
         ) : (
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl flex-shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1.5 bg-slate-100 border border-slate-200 rounded-xl shrink-0">
             <i className="fas fa-pause text-slate-400 text-xs" />
             <span className="text-xs font-bold text-slate-500">No Active Cycle</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="card p-4 space-y-4">
-          <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5 sm:gap-4">
+        <div className="card p-3 sm:p-4 space-y-3 sm:space-y-4">
+          <div className="p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200/80">
             {/* Live Camera Viewport Container */}
-            <div className="relative overflow-hidden rounded-2xl bg-slate-950 min-h-[260px] flex items-center justify-center border border-slate-800 shadow-inner">
+            <div className="relative overflow-hidden rounded-2xl bg-slate-950 min-h-[180px] sm:min-h-[260px] flex items-center justify-center border border-slate-800 shadow-inner">
               {/* Native Live Video Stream */}
               <video
                 ref={videoRef}
                 autoPlay
                 playsInline
                 muted
-                className={`w-full h-full min-h-[260px] max-h-[340px] object-cover rounded-2xl ${
+                className={`w-full h-full min-h-[180px] sm:min-h-[260px] max-h-[240px] sm:max-h-[320px] object-cover rounded-2xl ${
                   scanning ? 'block' : 'hidden'
                 }`}
               />
@@ -294,11 +294,11 @@ export default function AdminQRVerification() {
 
               {/* Ready State Overlay when not scanning */}
               {!scanning && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-slate-900 text-slate-300">
-                  <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-3 shadow-inner">
-                    <i className="fas fa-qrcode text-2xl text-emerald-400" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3.5 bg-slate-900 text-slate-300">
+                  <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-2 shadow-inner">
+                    <i className="fas fa-qrcode text-xl text-emerald-400" />
                   </div>
-                  <div className="text-xs font-bold text-white mb-1">Camera Scanner Ready</div>
+                  <div className="text-xs font-bold text-white mb-0.5">Camera Scanner Ready</div>
                   <div className="text-[11px] text-slate-400 max-w-xs">
                     Point camera at QR code
                   </div>
@@ -308,7 +308,7 @@ export default function AdminQRVerification() {
               {/* Scanning Reticle & Laser Line Overlay while actively scanning */}
               {scanning && !isInitializingCam && (
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  <div className="relative w-52 h-52 sm:w-60 sm:h-60 border-2 border-emerald-400/80 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center overflow-hidden">
+                  <div className="relative w-40 h-40 sm:w-60 sm:h-60 border-2 border-emerald-400/80 rounded-2xl shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center justify-center overflow-hidden">
                     {/* Corner Reticle Accents */}
                     <div className="absolute top-0 left-0 w-4 h-4 border-t-4 border-l-4 border-emerald-400 rounded-tl-lg" />
                     <div className="absolute top-0 right-0 w-4 h-4 border-t-4 border-r-4 border-emerald-400 rounded-tr-lg" />
@@ -331,19 +331,19 @@ export default function AdminQRVerification() {
             </div>
 
             {/* Scanner Action Controls */}
-            <div className="mt-3">
+            <div className="mt-2.5 sm:mt-3">
               {!scanning ? (
                 <button
                   onClick={startScan}
                   disabled={!activeCycle}
-                  className="btn btn-primary w-full justify-center shadow-xs text-xs py-2.5"
+                  className="btn btn-primary w-full justify-center shadow-xs text-xs py-2 sm:py-2.5"
                 >
                   <i className="fas fa-camera mr-1.5" /> Start Camera Scanner
                 </button>
               ) : (
                 <button
                   onClick={stopScan}
-                  className="btn btn-gray w-full justify-center text-xs py-2.5"
+                  className="btn btn-gray w-full justify-center text-xs py-2 sm:py-2.5"
                 >
                   <i className="fas fa-square mr-1.5 text-red-500" /> Stop Camera Scanner
                 </button>
@@ -351,15 +351,15 @@ export default function AdminQRVerification() {
             </div>
           </div>
 
-          <div className="border-t border-slate-100 pt-4">
-            <div className="text-xs font-bold text-slate-400 uppercase mb-2">Manual Entry</div>
+          <div className="border-t border-slate-100 pt-3">
+            <div className="text-[11px] font-bold text-slate-400 uppercase mb-1.5">Manual Entry</div>
             <div className="flex gap-2">
-              <input className="form-input flex-1 text-xs" value={manual}
+              <input className="form-input flex-1 text-xs py-1.5 rounded-xl" value={manual}
                 onChange={e => setManual(e.target.value)}
                 placeholder="Paste QR token..."
                 onKeyDown={e => e.key === 'Enter' && handleManual()} />
               <button onClick={handleManual} disabled={!manual.trim() || !activeCycle}
-                className="btn btn-primary btn-sm flex-shrink-0">
+                className="btn btn-primary btn-sm flex-shrink-0 px-3">
                 <i className="fas fa-check" />
               </button>
             </div>
@@ -404,8 +404,8 @@ export default function AdminQRVerification() {
                   {result.household && (
                     <div className="bg-white/95 p-3.5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
                       {/* Household Header Info */}
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 border-b border-slate-100 pb-2.5">
+                        <div className="min-w-0">
                           <div className="font-display font-bold text-navy text-sm">
                             {result.member?.fname} {result.member?.lname}
                             {result.member?.is_head && <span className="ml-1.5 px-2 py-0.5 rounded-full text-[10px] bg-blue-100 text-blue-800 font-bold">Head</span>}
@@ -414,8 +414,8 @@ export default function AdminQRVerification() {
                             HH Code: <strong className="text-navy font-mono">{result.household.hh_code}</strong> · Purok: <strong className="text-navy">{result.household.purok_name}</strong>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                        <div className="shrink-0">
+                          <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                             {(result.household.members || []).filter(m => m.status === 'active' || (!m.status && m.status !== 'inactive' && m.status !== 'deceased')).length} / {(result.household.members || []).length} Active Members
                           </span>
                         </div>
@@ -518,39 +518,36 @@ export default function AdminQRVerification() {
         </div>
 
         <div className="card flex flex-col">
-          <div className="p-4 border-b border-slate-100 space-y-3">
+          <div className="p-3 sm:p-4 border-b border-slate-100 space-y-2.5 sm:space-y-3">
             <div className="flex items-center justify-between">
               <div className="font-display font-bold text-sm text-navy">Eligible List</div>
-              <div className="flex gap-2 text-xs">
-                <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg font-bold">
+              <div className="flex gap-1.5 text-xs">
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-lg font-bold text-[11px]">
                   {claimed} claimed
                 </span>
-                <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-lg font-bold">
+                <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-lg font-bold text-[11px]">
                   {remaining} unclaimed
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-2 flex-wrap bg-slate-50 p-1.5 rounded-xl border border-slate-100">
-              <div className="text-[10px] font-bold text-slate-400 uppercase px-1">Filter Status</div>
-              <div className="flex gap-1">
-                {[
-                  { key: 'all', label: 'All' },
-                  { key: 'unclaimed', label: 'Unclaimed' },
-                  { key: 'claimed', label: 'Claimed' },
-                ].map(f => (
-                  <button
-                    key={f.key}
-                    onClick={() => setClaimFilter(f.key)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
-                      claimFilter === f.key
-                        ? 'bg-white text-blue-600 shadow-sm'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/80">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'unclaimed', label: 'Unclaimed' },
+                { key: 'claimed', label: 'Claimed' },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setClaimFilter(f.key)}
+                  className={`flex-1 py-1 px-2 rounded-lg text-xs font-bold transition-all text-center cursor-pointer ${
+                    claimFilter === f.key
+                      ? 'bg-white text-blue-600 shadow-2xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}>
+                  {f.label}
+                </button>
+              ))}
             </div>
 
             <div className="tab-scroll">
@@ -569,9 +566,9 @@ export default function AdminQRVerification() {
               </div>
             ) : (
               filteredEligibles.map((e, i) => (
-                <div key={i} className={`flex items-center justify-between px-4 py-2.5 gap-3 ${e.is_claimed ? 'bg-emerald-50/30' : ''}`}>
+                <div key={i} className={`flex items-center justify-between px-3 sm:px-4 py-2.5 gap-3 ${e.is_claimed ? 'bg-emerald-50/30' : ''}`}>
                   <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="font-semibold text-sm text-navy truncate">{e.fname} {e.lname}</div>
+                    <div className="font-semibold text-xs sm:text-sm text-navy truncate">{e.fname} {e.lname}</div>
                     <div className="flex items-center gap-1.5 text-[11px] text-slate-500 flex-wrap">
                       <span>{e.hh_code}</span>
                       <span>·</span>
@@ -579,13 +576,15 @@ export default function AdminQRVerification() {
                       {e.qr_token && (
                         <>
                           <span>·</span>
-                          <span className="font-mono text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 inline-flex items-center gap-1" title={e.qr_token}>
-                            Token: {e.qr_token.slice(0, 8)}...
-                            <button onClick={() => { navigator.clipboard.writeText(e.qr_token); toast.success('Token copied!') }}
-                              className="text-blue-600 hover:text-blue-800 ml-0.5" title="Copy Token">
-                              <i className="fas fa-copy" />
-                            </button>
-                          </span>
+                          <button
+                            type="button"
+                            onClick={() => { navigator.clipboard.writeText(e.qr_token); toast.success('Token copied!') }}
+                            className="font-mono text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 inline-flex items-center gap-1 hover:bg-slate-200 cursor-pointer"
+                            title={`Click to copy: ${e.qr_token}`}
+                          >
+                            <span>Token: {e.qr_token.slice(0, 8)}...</span>
+                            <i className="fas fa-copy text-blue-500 text-[9px]" />
+                          </button>
                         </>
                       )}
                     </div>

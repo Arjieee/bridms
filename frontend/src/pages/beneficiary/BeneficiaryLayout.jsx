@@ -123,18 +123,18 @@ export default function BeneficiaryLayout() {
         
         {/* Sticky Desktop & Mobile Topbar */}
         <div className="topbar">
-          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0 flex-1">
             {/* 3-Line Hamburger Menu (☰) on Mobile View */}
             <button onClick={() => setSidebarOpen(o => !o)}
-              className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-navy flex-shrink-0 lg:hidden hover:bg-slate-200 transition-colors cursor-pointer"
+              className="w-8 h-8 sm:w-9 sm:h-9 bg-slate-100 rounded-xl flex items-center justify-center text-navy flex-shrink-0 lg:hidden hover:bg-slate-200 transition-colors cursor-pointer"
               title="Menu">
-              <i className="fas fa-bars" />
+              <i className="fas fa-bars text-sm" />
             </button>
-            <span className="font-display font-bold text-sm sm:text-base text-navy truncate">{pageLabel}</span>
+            <span className="font-display font-bold text-xs sm:text-base text-navy truncate">{pageLabel}</span>
           </div>
 
           {/* Clean Centered Flex Row for Cycle, Notification and Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 flex-shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <CycleHeaderWidget />
             <NotifBell />
             <ProfileAvatar />
@@ -142,7 +142,7 @@ export default function BeneficiaryLayout() {
         </div>
 
         <main ref={mainRef} className="flex-1 page-content overflow-y-auto"
-          style={{ paddingBottom: isDesktop ? '24px' : 'calc(72px + env(safe-area-inset-bottom))' }}>
+          style={{ paddingBottom: isDesktop ? '24px' : 'calc(76px + env(safe-area-inset-bottom, 0px))' }}>
           {navLoading ? (
             <PageSkeleton route={location.pathname} />
           ) : (

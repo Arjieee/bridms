@@ -38,8 +38,13 @@ export default function BeneficiaryHistory() {
         <div className="font-display font-bold text-base text-navy">
           <i className="fas fa-clock-rotate-left mr-2 text-blue-500" />My Distribution History
         </div>
-        <button onClick={handleExportCSV} className="btn btn-gray btn-xs cursor-pointer" title="Download my assistance history as CSV">
-          <i className="fas fa-file-csv text-emerald-600 text-sm" /> <span>Export My History (CSV)</span>
+        <button
+          onClick={handleExportCSV}
+          className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+          title="Download my assistance history as CSV"
+          aria-label="Export My History as CSV"
+        >
+          <i className="fas fa-file-csv text-emerald-600 text-sm" />
         </button>
       </div>
 

@@ -160,8 +160,8 @@ export default function AdminBeneficiaries() {
     <div>
 
       {/* Top Header Metrics & Action Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <div className="flex items-center gap-2.5 flex-wrap">
+      <div className="flex items-center justify-between gap-2.5 mb-4">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           <div className="bg-white border border-slate-200/80 px-3.5 py-1.5 rounded-xl shadow-2xs flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xs shrink-0">
               <i className="fas fa-house-user" />
@@ -183,14 +183,14 @@ export default function AdminBeneficiaries() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={handleExportCSV}
-            className="btn btn-gray btn-sm flex items-center gap-1.5 cursor-pointer text-xs font-semibold py-1.5 px-3 shadow-2xs"
-            title="Export Beneficiaries Masterlist to CSV"
+            className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer"
+            title={`Export Masterlist to CSV (${filtered.length} households)`}
+            aria-label="Export Masterlist to CSV"
           >
-            <i className="fas fa-file-csv text-emerald-600 text-sm" />
-            <span>Export Masterlist CSV ({filtered.length})</span>
+            <i className="fas fa-file-csv text-emerald-600 text-base" />
           </button>
         </div>
       </div>
@@ -275,7 +275,7 @@ export default function AdminBeneficiaries() {
       <div className="bg-white border border-slate-200/90 rounded-2xl p-2.5 mb-3.5 shadow-2xs space-y-2">
         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
           {/* Search Box */}
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-0 md:min-w-[200px]">
             <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none" />
             <input
               type="text"
@@ -301,72 +301,75 @@ export default function AdminBeneficiaries() {
             )}
           </div>
 
-          {/* Purok Filter Dropdown */}
-          <div className="relative min-w-[130px] sm:min-w-[150px]">
-            <select
-              value={purokFilter}
-              onChange={e => setPurok(e.target.value)}
-              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
-                purokFilter
-                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
-                  : 'bg-white border-slate-200 text-slate-700'
-              }`}
-            >
-              <option value="">📍 All Puroks</option>
-              {(puroks || []).filter(p => !p.is_archived).map(p => (
-                <option key={p.id} value={String(p.id)}>{p.name}</option>
-              ))}
-            </select>
-          </div>
+          {/* 4 Filter & Sort Dropdowns: 2x2 grid on mobile, inline flex row on desktop */}
+          <div className="grid grid-cols-2 md:flex md:flex-row items-center gap-2 w-full md:w-auto">
+            {/* Purok Filter Dropdown */}
+            <div className="relative min-w-0 md:min-w-[130px] sm:md:min-w-[150px]">
+              <select
+                value={purokFilter}
+                onChange={e => setPurok(e.target.value)}
+                className={`form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                  purokFilter
+                    ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                    : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                <option value="">📍 All Puroks</option>
+                {(puroks || []).filter(p => !p.is_archived).map(p => (
+                  <option key={p.id} value={String(p.id)}>{p.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Sector Filter Dropdown */}
-          <div className="relative min-w-[130px] sm:min-w-[150px]">
-            <select
-              value={sectorFilter}
-              onChange={e => setSector(e.target.value)}
-              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
-                sectorFilter
-                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
-                  : 'bg-white border-slate-200 text-slate-700'
-              }`}
-            >
-              <option value="">👥 All Sectors</option>
-              {sectors.map(s => (
-                <option key={s.code} value={s.code}>{s.name}</option>
-              ))}
-            </select>
-          </div>
+            {/* Sector Filter Dropdown */}
+            <div className="relative min-w-0 md:min-w-[130px] sm:md:min-w-[150px]">
+              <select
+                value={sectorFilter}
+                onChange={e => setSector(e.target.value)}
+                className={`form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                  sectorFilter
+                    ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                    : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                <option value="">👥 All Sectors</option>
+                {sectors.map(s => (
+                  <option key={s.code} value={s.code}>{s.name}</option>
+                ))}
+              </select>
+            </div>
 
-          {/* Member Status Dropdown */}
-          <div className="relative min-w-[130px] sm:min-w-[140px]">
-            <select
-              value={statusFilter}
-              onChange={e => setStatusFilter(e.target.value)}
-              className={`form-input text-xs py-2 pl-3 pr-7 rounded-xl font-medium cursor-pointer w-full transition-all ${
-                statusFilter !== 'all'
-                  ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
-                  : 'bg-white border-slate-200 text-slate-700'
-              }`}
-            >
-              <option value="all">🏷️ All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="deceased">Deceased</option>
-            </select>
-          </div>
+            {/* Member Status Dropdown */}
+            <div className="relative min-w-0 md:min-w-[125px] sm:md:min-w-[140px]">
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className={`form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full transition-all ${
+                  statusFilter !== 'all'
+                    ? 'bg-blue-50 border-blue-300 text-blue-900 font-bold shadow-2xs'
+                    : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                <option value="all">🏷️ All Statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="deceased">Deceased</option>
+              </select>
+            </div>
 
-          {/* Sort Order Dropdown */}
-          <div className="relative min-w-[125px] sm:min-w-[135px]">
-            <select
-              value={sortOrder}
-              onChange={e => setSortOrder(e.target.value)}
-              className="form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full bg-white border-slate-200 text-slate-700"
-              title="Sort Beneficiaries Masterlist"
-            >
-              <option value="name_asc">🔤 Name (A–Z)</option>
-              <option value="name_desc">🔤 Name (Z–A)</option>
-              <option value="code">🔢 HH Code</option>
-            </select>
+            {/* Sort Order Dropdown */}
+            <div className="relative min-w-0 md:min-w-[120px] sm:md:min-w-[135px]">
+              <select
+                value={sortOrder}
+                onChange={e => setSortOrder(e.target.value)}
+                className="form-input text-xs py-2 pl-2.5 pr-6 rounded-xl font-medium cursor-pointer w-full bg-white border-slate-200 text-slate-700"
+                title="Sort Beneficiaries Masterlist"
+              >
+                <option value="name_asc">🔤 Name (A–Z)</option>
+                <option value="name_desc">🔤 Name (Z–A)</option>
+                <option value="code">🔢 HH Code</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -643,10 +646,14 @@ export default function AdminBeneficiaries() {
               </div>
               <div className="form-group">
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="form-label mb-0">Remarks</label>
-                  <span className={`text-[11px] font-semibold ${newStatus !== 'active' ? 'text-red-500' : 'text-slate-400'}`}>
-                    {newStatus !== 'active' ? 'Required *' : 'Optional'}
-                  </span>
+                  <label className="form-label mb-0">
+                    Remarks {newStatus !== 'active' && <span className="text-red-500 font-bold">*</span>}
+                  </label>
+                  {newStatus === 'active' && (
+                    <span className="text-[11px] font-semibold text-slate-400">
+                      Optional
+                    </span>
+                  )}
                 </div>
                 <textarea className="form-input" rows={3} value={statusRemarks}
                   onChange={e => setStatusRemarks(e.target.value)}

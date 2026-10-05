@@ -214,7 +214,9 @@ export default function RegisterPage() {
                     placeholder="e.g. Blk 3 Lot 5 Mabini Street" />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Purok *</label>
+                  <label className="form-label">
+                    Purok <span className="text-red-500">*</span>
+                  </label>
                   <select className={`form-input ${errors.purok ? 'error' : ''}`}
                     value={purokId} onChange={e => setPurokId(e.target.value)}>
                     <option value="">Select your Purok</option>
@@ -233,7 +235,9 @@ export default function RegisterPage() {
                 <p className="text-xs text-slate-500 mb-5">This person will own the account and act as primary contact.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="form-group">
-                    <label className="form-label">First Name *</label>
+                    <label className="form-label">
+                      First Name <span className="text-red-500">*</span>
+                    </label>
                     <input className={`form-input ${errors.hfname ? 'error' : ''}`}
                       value={head.fname} onChange={e => updateHead('fname', e.target.value)}
                       placeholder="e.g. Arjie" />
@@ -246,7 +250,9 @@ export default function RegisterPage() {
                       placeholder="e.g. Bantayan" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name *</label>
+                    <label className="form-label">
+                      Last Name <span className="text-red-500">*</span>
+                    </label>
                     <input className={`form-input ${errors.hlname ? 'error' : ''}`}
                       value={head.lname} onChange={e => updateHead('lname', e.target.value)}
                       placeholder="e.g. Pisos" />
@@ -256,14 +262,16 @@ export default function RegisterPage() {
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   <div className="form-group">
                     <label className="form-label">
-                      Age * {parseInt(head.age) >= 60 && <span className="text-amber-500 font-normal">· Senior auto-tagged</span>}
+                      Age <span className="text-red-500">*</span> {parseInt(head.age) >= 60 && <span className="text-amber-500 font-normal">· Senior auto-tagged</span>}
                     </label>
                     <input type="number" min="18" className={`form-input ${errors.hage ? 'error' : ''}`}
                       value={head.age} onChange={e => updateHead('age', e.target.value)} />
                     {errors.hage && <div className="text-red-500 text-xs mt-1">{errors.hage}</div>}
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Sex *</label>
+                    <label className="form-label">
+                      Sex <span className="text-red-500">*</span>
+                    </label>
                     <select className={`form-input ${errors.hsex ? 'error' : ''}`}
                       value={head.sex} onChange={e => updateHead('sex', e.target.value)}>
                       <option value="">Select</option>
@@ -275,14 +283,18 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Contact Number * (09XXXXXXXXX)</label>
+                  <label className="form-label">
+                    Contact Number <span className="text-red-500">*</span> (09XXXXXXXXX)
+                  </label>
                   <input className={`form-input ${errors.hcontact ? 'error' : ''}`}
                     value={head.contact} onChange={e => updateHead('contact', e.target.value)}
                     placeholder="09171234567" maxLength={11} />
                   {errors.hcontact && <div className="text-red-500 text-xs mt-1">{errors.hcontact}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Email Address *</label>
+                  <label className="form-label">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
                   <input type="email" className={`form-input ${errors.hemail ? 'error' : ''}`}
                     value={head.email} onChange={e => updateHead('email', e.target.value)} />
                   {errors.hemail && <div className="text-red-500 text-xs mt-1">{errors.hemail}</div>}
@@ -387,7 +399,9 @@ export default function RegisterPage() {
                               Contact info is required for sector members (for notifications & verification)
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Member's Contact Number *</label>
+                              <label className="form-label">
+                                Member's Contact Number <span className="text-red-500">*</span>
+                              </label>
                               <input className={`form-input ${errors[`m${i}_contact`] ? 'error' : ''}`}
                                 value={m.contact}
                                 onChange={e => updateMember(i, 'contact', e.target.value)}
@@ -395,7 +409,9 @@ export default function RegisterPage() {
                               {errors[`m${i}_contact`] && <div className="text-red-500 text-xs mt-1">{errors[`m${i}_contact`]}</div>}
                             </div>
                             <div className="form-group">
-                              <label className="form-label">Member's Email *</label>
+                              <label className="form-label">
+                                Member's Email <span className="text-red-500">*</span>
+                              </label>
                               <input type="email" className={`form-input ${errors[`m${i}_email`] ? 'error' : ''}`}
                                 value={m.email}
                                 onChange={e => updateMember(i, 'email', e.target.value)}
@@ -450,7 +466,9 @@ export default function RegisterPage() {
                   <i className="fas fa-shield-halved mr-1" />After registering, an admin must approve your account before you can log in.
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Username * (8+ chars, letters/numbers/underscores)</label>
+                  <label className="form-label">
+                    Username <span className="text-red-500">*</span> (8+ chars, letters/numbers/underscores)
+                  </label>
                   <input className={`form-input ${errors.username ? 'error' : ''}`}
                     value={username}
                     onChange={e => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
@@ -464,7 +482,9 @@ export default function RegisterPage() {
                   {errors.username && <div className="text-red-500 text-xs mt-1">{errors.username}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Password *</label>
+                  <label className="form-label">
+                    Password <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <input ref={regPasswordRef} type={showPw ? 'text' : 'password'}
                       className={`form-input pr-10 ${errors.password ? 'error' : ''}`}
@@ -484,7 +504,9 @@ export default function RegisterPage() {
                   {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Confirm Password *</label>
+                  <label className="form-label">
+                    Confirm Password <span className="text-red-500">*</span>
+                  </label>
                   <div className="relative">
                     <input ref={regConfirmPwRef} type={showCpw ? 'text' : 'password'}
                       className={`form-input pr-10 ${errors.confirmPw ? 'error' : ''}`}
@@ -543,7 +565,7 @@ export default function RegisterPage() {
           <label className="flex items-start gap-2.5 cursor-pointer pt-2 border-t border-slate-200 text-xs font-semibold text-navy">
             <input type="checkbox" checked={privacyConsent} onChange={e => { setPrivacyConsent(e.target.checked); if (e.target.checked) setErrors(er => ({ ...er, privacy: null })) }}
               className="mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer" />
-            <span>I have read, understood, and agree to the <strong>Data Privacy Notice</strong> above. *</span>
+            <span>I have read, understood, and agree to the <strong>Data Privacy Notice</strong> above. <span className="text-red-500 font-bold">*</span></span>
           </label>
           {errors.privacy && <div className="text-red-500 text-xs font-semibold mt-1">{errors.privacy}</div>}
         </div>

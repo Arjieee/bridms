@@ -32,10 +32,10 @@ function PieCard({ label, claimed, unclaimed, total, claimedNames, unclaimedName
   const [showLists, setShowLists] = useState(false)
 
   return (
-    <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+    <div className="bg-white rounded-2xl p-3.5 sm:p-4 border border-slate-100 shadow-sm">
       <div className="font-display font-bold text-sm text-navy mb-3 truncate">{label}</div>
-      <div className="flex items-center gap-4 mb-3">
-        <div style={{ width: 100, height: 100, flexShrink: 0 }}>
+      <div className="flex items-center gap-3 sm:gap-4 mb-3">
+        <div className="w-[84px] h-[84px] sm:w-[100px] sm:h-[100px] shrink-0">
           <Pie
             data={{
               labels: ['Claimed', 'Unclaimed'],
@@ -55,7 +55,7 @@ function PieCard({ label, claimed, unclaimed, total, claimedNames, unclaimedName
         </div>
         <div className="flex-1 space-y-1.5 min-w-0">
           <div className="flex items-center gap-2 text-xs">
-            <div className="w-3 h-3 rounded-sm bg-emerald-500 flex-shrink-0" />
+            <div className="w-3 h-3 rounded-sm bg-emerald-500 shrink-0" />
             <span className="text-slate-600">Claimed</span>
             <span className="ml-auto font-bold text-emerald-600">{claimed} ({pct}%)</span>
           </div>
@@ -198,9 +198,13 @@ export default function AdminReports() {
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button onClick={handleExportCSV} className="btn btn-gray btn-sm py-1.5 px-2.5 cursor-pointer flex items-center gap-1" title="Export Current Cycle Summary to CSV">
+          <button
+            onClick={handleExportCSV}
+            className="w-8 h-8 rounded-xl bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
+            title="Export Current Cycle Summary to CSV"
+            aria-label="Export Current Cycle Summary to CSV"
+          >
             <i className="fas fa-file-csv text-emerald-600 text-sm" />
-            <span className="text-xs">Export CSV</span>
           </button>
           <button
             onClick={() => setShowPrintPreview(true)}
@@ -214,34 +218,80 @@ export default function AdminReports() {
         </div>
       </div>
 
-      {/* Date Range Filter Controls */}
-      <div className="card p-3 sm:p-3.5 mb-4 no-print flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200">
-        <div className="text-xs font-bold text-navy flex items-center gap-1.5">
+      {/* Date Range & Cycle Navigator Toolbar */}
+      <div className="card p-3 sm:py-3 sm:px-4 mb-5 no-print grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] items-center gap-3 bg-slate-50 border border-slate-200">
+        {/* Left: Filter Date Range Title */}
+        <div className="text-xs font-bold text-navy flex items-center gap-1.5 shrink-0 justify-self-start">
           <i className="fas fa-calendar-alt text-blue-600" /> Filter Date Range
         </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap text-xs">
-          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[130px]">
-            <span className="text-[11px] text-slate-500 font-medium sm:hidden">From:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => { setStartDate(e.target.value); setCycleIdx(0) }}
-              className="form-input !py-1.5 !px-2.5 text-xs w-full sm:!w-36 bg-white border-slate-200 rounded-lg min-w-[120px]"
-            />
+
+        {/* Center: Cycle Navigator */}
+        {currentCycle ? (
+          <div className="flex items-center justify-between gap-2.5 w-full max-w-[620px] justify-self-center px-1">
+            <button
+              onClick={handlePrev}
+              disabled={cycleIdx === 0}
+              className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-slate-600 transition-colors shrink-0 shadow-2xs cursor-pointer"
+              title="Previous Cycle"
+            >
+              <i className="fas fa-chevron-left text-xs" />
+            </button>
+            <div className="flex-1 min-w-0 text-center px-1 sm:px-2 py-0.5">
+              <div className="font-display font-bold text-xs sm:text-[13px] text-navy leading-tight truncate" title={currentCycle.name}>
+                {currentCycle.name}
+              </div>
+              <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 mt-0.5 flex-wrap">
+                <span className={`badge text-[9px] py-0 px-1.5 shrink-0 ${currentCycle.is_active ? 'badge-approved' : 'badge-rejected'}`}>
+                  {currentCycle.is_active ? 'Active' : 'Ended'}
+                </span>
+                <span>·</span>
+                <span>Cycle {cycleIdx + 1} of {sortedCycles.length}</span>
+                <span>·</span>
+                <span>{new Date(currentCycle.created_at).toLocaleDateString('en-PH')}</span>
+              </div>
+            </div>
+            <button
+              onClick={handleNext}
+              disabled={cycleIdx >= sortedCycles.length - 1}
+              className="w-8 h-8 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center text-slate-600 transition-colors shrink-0 shadow-2xs cursor-pointer"
+              title="Next Cycle"
+            >
+              <i className="fas fa-chevron-right text-xs" />
+            </button>
           </div>
-          <span className="text-slate-400 font-medium hidden sm:inline">to</span>
-          <div className="flex items-center gap-1.5 flex-1 sm:flex-initial min-w-[130px]">
-            <span className="text-[11px] text-slate-500 font-medium sm:hidden">To:</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={e => { setEndDate(e.target.value); setCycleIdx(0) }}
-              className="form-input !py-1.5 !px-2.5 text-xs w-full sm:!w-36 bg-white border-slate-200 rounded-lg min-w-[120px]"
-            />
+        ) : (
+          <div className="text-xs text-slate-400 italic text-center justify-self-center py-2">
+            No matching cycles
+          </div>
+        )}
+
+        {/* Right: Date Inputs */}
+        <div className="w-full lg:w-auto flex flex-col sm:flex-row items-center gap-2 justify-self-end">
+          <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:items-center sm:w-auto">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[11px] text-slate-500 font-medium sm:hidden w-8 shrink-0">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={e => { setStartDate(e.target.value); setCycleIdx(0) }}
+                className="form-input !py-1.5 !px-2 text-xs w-full sm:!w-34 bg-white border-slate-200 rounded-lg"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-[11px] text-slate-500 font-medium sm:hidden w-8 shrink-0">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={e => { setEndDate(e.target.value); setCycleIdx(0) }}
+                className="form-input !py-1.5 !px-2 text-xs w-full sm:!w-34 bg-white border-slate-200 rounded-lg"
+              />
+            </div>
           </div>
           {(startDate || endDate) && (
-            <button onClick={() => { setStartDate(''); setEndDate(''); setCycleIdx(0) }}
-              className="text-xs text-red-600 hover:text-red-800 font-semibold px-2 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors flex-shrink-0">
+            <button
+              onClick={() => { setStartDate(''); setEndDate(''); setCycleIdx(0) }}
+              className="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition-colors w-full sm:w-auto text-center cursor-pointer shrink-0"
+            >
               Reset
             </button>
           )}
@@ -256,28 +306,6 @@ export default function AdminReports() {
         </div>
       ) : (
         <>
-          {/* CYCLE NAVIGATOR */}
-          <div className="card p-3 mb-5 flex items-center gap-2">
-            <button onClick={handlePrev} disabled={cycleIdx === 0}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-600 transition-colors">
-              <i className="fas fa-chevron-left" />
-            </button>
-            <div className="flex-1 min-w-0 text-center">
-              <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="font-display font-bold text-sm text-navy truncate">{currentCycle.name}</span>
-                <span className={`badge ${currentCycle.is_active ? 'badge-approved' : 'badge-rejected'}`}>
-                  {currentCycle.is_active ? 'Active' : 'Ended'}
-                </span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-0.5">
-                Cycle {cycleIdx + 1} of {sortedCycles.length} · Created: {new Date(currentCycle.created_at).toLocaleDateString('en-PH')}
-              </div>
-            </div>
-            <button onClick={handleNext} disabled={cycleIdx >= sortedCycles.length - 1}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center text-slate-600 transition-colors">
-              <i className="fas fa-chevron-right" />
-            </button>
-          </div>
 
           <div className="mb-6">
             <div className="font-display font-bold text-sm text-navy mb-3">
@@ -366,7 +394,7 @@ function ReportsPrintPreviewModal({ cycle, purokData, sectorData, onClose }) {
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="card modal-box p-6 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
+        className="card modal-box p-4 sm:p-8 w-full max-w-3xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-200 relative print:border-none print:shadow-none print:p-0 print:max-w-full print:rounded-none"
       >
         {/* Close Button top-right */}
         <button
@@ -448,7 +476,7 @@ function ReportsPrintPreviewModal({ cycle, purokData, sectorData, onClose }) {
           </div>
 
           {/* Purok Breakdown Table */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+          <div className="border border-slate-200 rounded-xl overflow-x-auto text-xs">
             <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
               <span>Purok Distribution Breakdown</span>
               <span className="text-slate-500 font-semibold text-[10px] normal-case">
@@ -511,7 +539,7 @@ function ReportsPrintPreviewModal({ cycle, purokData, sectorData, onClose }) {
 
           {/* Sector Breakdown Table (if available) */}
           {sectorData.length > 0 && (
-            <div className="border border-slate-200 rounded-xl overflow-hidden text-xs">
+            <div className="border border-slate-200 rounded-xl overflow-x-auto text-xs">
               <div className="bg-slate-100 px-3.5 py-2 font-bold text-slate-800 uppercase tracking-wider text-[11px] border-b border-slate-200 flex items-center justify-between">
                 <span>Sector Distribution Breakdown</span>
                 <span className="text-slate-500 font-semibold text-[10px] normal-case">

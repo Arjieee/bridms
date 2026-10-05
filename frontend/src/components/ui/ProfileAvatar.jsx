@@ -294,7 +294,9 @@ export default function ProfileAvatar() {
                       {/* Contact & Personal Editable Fields */}
                       <div className="space-y-2.5">
                         <div className="form-group">
-                          <label className="form-label text-xs">Display Name *</label>
+                          <label className="form-label text-xs">
+                            Display Name <span className="text-red-500">*</span>
+                          </label>
                           <input className="form-input text-xs py-1.5" value={form.full_name}
                             onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
                         </div>
@@ -339,7 +341,9 @@ export default function ProfileAvatar() {
                         Update your login password below. Use a strong password to protect your account.
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Current Password *</label>
+                        <label className="form-label">
+                          Current Password <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <input type={showPw.curr ? 'text' : 'password'}
                             className="form-input pr-10" value={pwForm.current_password}
@@ -351,7 +355,9 @@ export default function ProfileAvatar() {
                         </div>
                       </div>
                       <div className="form-group">
-                        <label className="form-label">New Password *</label>
+                        <label className="form-label">
+                          New Password <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <input type={showPw.new ? 'text' : 'password'}
                             className="form-input pr-10" value={pwForm.new_password}
@@ -364,7 +370,9 @@ export default function ProfileAvatar() {
                         <PasswordStrengthMeter password={pwForm.new_password} />
                       </div>
                       <div className="form-group">
-                        <label className="form-label">Confirm New Password *</label>
+                        <label className="form-label">
+                          Confirm New Password <span className="text-red-500">*</span>
+                        </label>
                         <div className="relative">
                           <input type={showPw.conf ? 'text' : 'password'}
                             className="form-input pr-10" value={pwForm.confirm}

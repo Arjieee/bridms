@@ -467,13 +467,13 @@ function DeskDistributionModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+      className="modal-overlay"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card p-6 w-full max-w-2xl bg-white rounded-2xl shadow-2xl flex flex-col my-auto border border-slate-100 max-h-[90vh] overflow-y-auto"
+        className="modal-box p-4 sm:p-6 w-full max-w-2xl max-h-[90vh] sm:max-h-[88vh] border border-slate-100"
       >
         {/* Modal Header */}
         <div className="flex items-start justify-between pb-3.5 border-b border-slate-100">
@@ -674,7 +674,9 @@ function DeskDistributionModal({
               {/* Distribution Cycle Selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Distribution Cycle *</label>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Distribution Cycle <span className="text-red-500">*</span>
+                  </label>
                   <select
                     className="form-input text-xs py-2 rounded-xl w-full"
                     value={selectedCycleId}
@@ -698,7 +700,9 @@ function DeskDistributionModal({
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 block mb-1">Distribution Date *</label>
+                  <label className="font-bold text-slate-700 block mb-1">
+                    Distribution Date <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="date"
                     required
@@ -712,7 +716,7 @@ function DeskDistributionModal({
               {/* Physical Recipient / Claimant Selector */}
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Claimant / Received By *
+                  Claimant / Received By <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <label className={`p-2.5 rounded-xl border text-xs cursor-pointer flex items-center gap-2 transition-all ${
@@ -790,7 +794,9 @@ function DeskDistributionModal({
                 {claimantType === 'rep' && (
                   <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-xl grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
-                      <label className="font-semibold text-slate-600 block mb-1 text-[11px]">Representative Full Name *</label>
+                      <label className="font-semibold text-slate-600 block mb-1 text-[11px]">
+                        Representative Full Name <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="text"
                         required
@@ -1163,53 +1169,62 @@ export default function AdminDistribution() {
   return (
     <div>
       {/* Top Header */}
-      <div className="section-header mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-5">
         <div>
           <h1 className="font-display font-extrabold text-2xl text-navy">Relief Distribution</h1>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap">
           {isAdmin && (
             <button
               type="button"
               onClick={() => navigate('/admin/settings?tab=packages')}
-              className="btn btn-outline btn-sm cursor-pointer flex items-center gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50"
+              className="btn btn-outline btn-sm cursor-pointer flex items-center gap-1.5 border-blue-200 text-blue-700 hover:bg-blue-50 py-1.5 px-2.5 flex-1 sm:flex-none justify-center"
               title="Manage baseline relief package templates in Admin Settings"
             >
-              <i className="fas fa-boxes-packing text-blue-600" />
-              <span className="hidden sm:inline">Package Templates</span>
+              <i className="fas fa-boxes-packing text-blue-600 text-xs sm:text-sm" />
+              <span className="text-xs">Templates</span>
             </button>
           )}
-          <button onClick={() => setShowAddSector(true)} className="btn btn-outline btn-sm cursor-pointer">
-            <i className="fas fa-plus" /> <span className="hidden sm:inline">Add Sector</span>
+          <button
+            onClick={() => setShowAddSector(true)}
+            className="btn btn-outline btn-sm cursor-pointer py-1.5 px-2.5 flex-1 sm:flex-none justify-center flex items-center gap-1"
+            title="Add Sector"
+          >
+            <i className="fas fa-plus text-xs" />
+            <span className="text-xs">Sector</span>
           </button>
           <button
             onClick={() => {
               setPrefillHhId(null)
               setShowAdd(true)
             }}
-            className="btn btn-primary btn-sm flex items-center gap-1.5 shadow-sm cursor-pointer"
+            className="btn btn-primary btn-sm flex items-center justify-center gap-1.5 shadow-sm cursor-pointer py-1.5 px-3 whitespace-nowrap flex-1 sm:flex-none"
           >
-            <i className="fas fa-hand-holding-heart" /> Add Distribution
+            <i className="fas fa-hand-holding-heart text-xs" />
+            <span className="text-xs">Add Distribution</span>
           </button>
         </div>
       </div>
 
-      {/* Sector Category Pills */}
-      <div className="grid grid-cols-3 sm:grid-cols-6 gap-3 mb-5">
+      {/* Sector Category Pills: Swipeable horizontal rail on mobile, balanced grid on tablet/desktop */}
+      <div className="flex sm:grid gap-2 sm:gap-3 overflow-x-auto pb-1.5 mb-3.5 sm:mb-5 sm:grid-cols-6 tab-scroll touch-pan-x -mx-1 px-1">
         {SECTOR_BTNS.map(s => {
           const isActive = selectedType === s.key
           return (
             <div
               key={s.key}
               onClick={() => { setType(s.key); setPurok('') }}
-              className={`cat-card ${isActive ? 'active' : ''}`}
+              className={`cat-card min-w-[84px] sm:min-w-0 !py-2.5 sm:!p-4 shrink-0 sm:shrink ${isActive ? 'active' : ''}`}
               style={isActive ? { borderColor: s.color, background: `${s.color}12` } : {}}
             >
               <i
-                className={`fas ${s.icon} text-2xl mb-1.5`}
+                className={`fas ${s.icon} text-lg sm:text-2xl mb-1 sm:mb-1.5`}
                 style={{ color: isActive ? s.color : '#94a3b8' }}
               />
-              <div className="font-display font-bold text-xs text-navy text-center leading-tight">
+              <div
+                className="font-display font-bold text-[11px] sm:text-xs text-navy text-center leading-tight truncate max-w-[78px] sm:max-w-none"
+                style={isActive ? { color: s.color } : {}}
+              >
                 {s.label}
               </div>
             </div>
@@ -1218,7 +1233,7 @@ export default function AdminDistribution() {
       </div>
 
       {selectedType && (
-        <div className="card p-3 mb-4 space-y-3">
+        <div className="card p-3 mb-4 space-y-2.5">
           {/* Header Row: Active Cycle Info + Record Count + Month History Filter */}
           <div className="space-y-2 border-b border-slate-100 pb-2.5">
             <div className="flex items-center justify-between gap-2">
@@ -1227,19 +1242,19 @@ export default function AdminDistribution() {
                   <i className="fas fa-hand-holding-heart text-blue-600 text-xs" />
                   <span>{receivedHouseholdIds.size} claimed</span>
                 </span>
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-                  · {records.length} {records.length === 1 ? 'record' : 'records'} found
+                <span className="text-xs text-slate-400 font-medium">
+                  · {records.length} {records.length === 1 ? 'record' : 'records'}
                 </span>
               </div>
 
               {/* Export CSV Button */}
               <button
                 onClick={handleExportCSV}
-                className="btn btn-gray btn-xs py-1 px-2.5 cursor-pointer flex items-center gap-1.5 flex-shrink-0"
+                className="w-7 h-7 rounded-lg bg-white border border-slate-200 hover:bg-emerald-50 hover:border-emerald-300 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition-colors shadow-2xs cursor-pointer shrink-0"
                 title="Export Distribution Logs to CSV"
+                aria-label="Export Distribution Logs to CSV"
               >
                 <i className="fas fa-file-csv text-emerald-600 text-xs" />
-                <span className="text-xs">Export CSV</span>
               </button>
             </div>
 
@@ -1270,7 +1285,7 @@ export default function AdminDistribution() {
                 <i className="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs" />
                 <input
                   type="text"
-                  placeholder="Search record by code, name, HH code, or item..."
+                  placeholder="Search by code, name, HH code, or item..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="form-input text-xs py-1.5 pl-7 pr-2.5 w-full border-slate-200 rounded-lg"
@@ -1300,75 +1315,141 @@ export default function AdminDistribution() {
         </div>
       )}
 
-      {/* Distribution Records Table */}
+      {/* Distribution Records Container */}
       {records.length > 0 ? (
-        <div className="card mobile-card-table">
-          <table className="tbl w-full table-fixed">
-            <thead>
-              <tr>
-                <th className="w-[12%]">Code</th>
-                <th className="w-[22%]">Head / Beneficiary</th>
-                <th className="w-[9%]">Purok</th>
-                <th className="w-[9%]">Date</th>
-                <th className="w-[8%]">Type</th>
-                <th className="w-[40%]">Details &amp; Receipt</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map(r => (
-                <tr key={r.id}>
-                  <td data-label="Code" className="whitespace-nowrap">
-                    <span className="font-mono text-xs font-bold text-navy">{r.dist_code}</span>
-                  </td>
-                  <td data-label="Beneficiary">
-                    <div className="font-semibold text-navy text-xs">
+        <div className="card overflow-hidden bg-white border border-slate-200 rounded-2xl shadow-xs">
+          {/* MOBILE CARDS VIEW (< sm) */}
+          <div className="sm:hidden divide-y divide-slate-100">
+            {records.map(r => (
+              <div key={r.id} className="p-3.5 space-y-2.5 hover:bg-slate-50/60 transition-colors">
+                {/* Row 1: Code, Date & Type Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-navy bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      {r.dist_code}
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-medium">{r.dist_date}</span>
+                  </div>
+                  <span className={`badge shrink-0 ${r.type === 'special_assistance' ? 'badge-pending' : 'badge-approved'}`}>
+                    {r.type === 'special_assistance' ? 'Special' : 'Standard'}
+                  </span>
+                </div>
+
+                {/* Row 2: Beneficiary Name, HH code, Purok & Receipt Button */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="font-bold text-navy text-xs leading-snug truncate">
                       {r.member_name || (r.head_fname ? `${r.head_fname} ${r.head_lname}` : '—')}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">{r.hh_code}</div>
-                  </td>
-                  <td data-label="Purok" className="whitespace-nowrap">
-                    <span className="text-xs font-medium text-slate-700">{r.purok_name}</span>
-                  </td>
-                  <td data-label="Date" className="whitespace-nowrap">
-                    <span className="text-xs text-slate-600">{r.dist_date}</span>
-                  </td>
-                  <td data-label="Type" className="whitespace-nowrap">
-                    <span className={`badge ${r.type === 'special_assistance' ? 'badge-pending' : 'badge-approved'}`}>
-                      {r.type === 'special_assistance' ? 'Special' : 'Standard'}
-                    </span>
-                  </td>
-                  <td data-label="Details & Receipt">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="text-[11px] text-slate-700 font-medium leading-normal line-clamp-2"
-                          title={r.items?.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')}
-                        >
-                          {r.items?.length > 0
-                            ? r.items.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')
-                            : 'No package items logged'}
-                        </div>
-                        {r.special_reason && (
-                          <div className="text-[10px] text-amber-700 italic mt-0.5 truncate" title={r.special_reason}>
-                            Reason: {r.special_reason}
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setCompletedReceipt({ ...r, is_reprint: true })}
-                        className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1.5 rounded-lg flex-shrink-0 cursor-pointer font-bold transition-all shadow-2xs group"
-                        title="View and reprint official acknowledgment receipt slip"
-                      >
-                        <i className="fas fa-receipt text-xs group-hover:scale-110 transition-transform" />
-                        <span>Receipt</span>
-                      </button>
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5 flex-wrap">
+                      <span className="text-blue-600 font-bold bg-blue-50 px-1.5 py-0.2 rounded border border-blue-100">
+                        {r.hh_code}
+                      </span>
+                      <span>·</span>
+                      <span className="text-slate-600 font-medium">{r.purok_name}</span>
                     </div>
-                  </td>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCompletedReceipt({ ...r, is_reprint: true })}
+                    className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1.5 rounded-lg shrink-0 cursor-pointer font-bold text-[11px] shadow-2xs transition-colors"
+                    title="View and reprint official acknowledgment receipt slip"
+                  >
+                    <i className="fas fa-receipt text-[10px]" />
+                    <span>Receipt</span>
+                  </button>
+                </div>
+
+                {/* Row 3: Items Breakdown Pills / Summary */}
+                <div className="bg-slate-50/80 rounded-xl p-2.5 border border-slate-200/60 text-[11px] text-slate-700">
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                    <i className="fas fa-box-open text-blue-500 text-[10px]" /> Relief Items Issued:
+                  </div>
+                  <div className="font-medium leading-relaxed text-slate-800">
+                    {r.items?.length > 0
+                      ? r.items.map(i => `${i.item_name} (${i.quantity} ${i.unit})`).join(' · ')
+                      : 'No package items logged'}
+                  </div>
+                  {r.special_reason && (
+                    <div className="text-[10px] text-amber-700 italic mt-1.5 pt-1.5 border-t border-slate-200/50" title={r.special_reason}>
+                      Special Reason: {r.special_reason}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* DESKTOP TABLE VIEW (>= sm) */}
+          <div className="hidden sm:block overflow-x-auto w-full">
+            <table className="tbl w-full table-fixed">
+              <thead>
+                <tr>
+                  <th className="w-[12%]">Code</th>
+                  <th className="w-[22%]">Head / Beneficiary</th>
+                  <th className="w-[9%]">Purok</th>
+                  <th className="w-[9%]">Date</th>
+                  <th className="w-[8%]">Type</th>
+                  <th className="w-[40%]">Details &amp; Receipt</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {records.map(r => (
+                  <tr key={r.id}>
+                    <td data-label="Code" className="whitespace-nowrap">
+                      <span className="font-mono text-xs font-bold text-navy">{r.dist_code}</span>
+                    </td>
+                    <td data-label="Beneficiary">
+                      <div className="font-semibold text-navy text-xs">
+                        {r.member_name || (r.head_fname ? `${r.head_fname} ${r.head_lname}` : '—')}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-mono">{r.hh_code}</div>
+                    </td>
+                    <td data-label="Purok" className="whitespace-nowrap">
+                      <span className="text-xs font-medium text-slate-700">{r.purok_name}</span>
+                    </td>
+                    <td data-label="Date" className="whitespace-nowrap">
+                      <span className="text-xs text-slate-600">{r.dist_date}</span>
+                    </td>
+                    <td data-label="Type" className="whitespace-nowrap">
+                      <span className={`badge ${r.type === 'special_assistance' ? 'badge-pending' : 'badge-approved'}`}>
+                        {r.type === 'special_assistance' ? 'Special' : 'Standard'}
+                      </span>
+                    </td>
+                    <td data-label="Details & Receipt">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="text-[11px] text-slate-700 font-medium leading-normal line-clamp-2"
+                            title={r.items?.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')}
+                          >
+                            {r.items?.length > 0
+                              ? r.items.map(i => `${i.item_name} (${i.quantity}${i.unit})`).join(', ')
+                              : 'No package items logged'}
+                          </div>
+                          {r.special_reason && (
+                            <div className="text-[10px] text-amber-700 italic mt-0.5 truncate" title={r.special_reason}>
+                              Reason: {r.special_reason}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setCompletedReceipt({ ...r, is_reprint: true })}
+                          className="btn btn-outline btn-xs px-2.5 py-1 text-blue-600 border-blue-200 hover:bg-blue-600 hover:text-white flex items-center gap-1.5 rounded-lg flex-shrink-0 cursor-pointer font-bold transition-all shadow-2xs group"
+                          title="View and reprint official acknowledgment receipt slip"
+                        >
+                          <i className="fas fa-receipt text-xs group-hover:scale-110 transition-transform" />
+                          <span>Receipt</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : selectedType ? (
         <div className="card p-10 text-center text-slate-400">
@@ -1433,7 +1514,9 @@ export default function AdminDistribution() {
                 Create a custom sector if the default ones (PWD, Senior, OSY, Solo Parent, Teenage Mom) don't fit your needs.
               </div>
               <div className="form-group">
-                <label className="form-label">Sector Name *</label>
+                <label className="form-label">
+                  Sector Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   className="form-input"
                   value={sectorForm.name}

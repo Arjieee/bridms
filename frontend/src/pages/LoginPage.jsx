@@ -141,29 +141,40 @@ export default function LoginPage() {
         </motion.div>
       </AnimatePresence>
 
-      <div className="w-full lg:w-[460px] bg-white flex flex-col items-center justify-center px-6 sm:px-8 py-12 relative">
+      <div className="w-full lg:w-[460px] bg-white flex flex-col items-center justify-center px-4 sm:px-8 py-8 sm:py-12 relative min-h-screen lg:min-h-0">
         <button onClick={() => navigate('/')}
-          className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 text-sm">
+          className="absolute top-4 sm:top-6 left-4 sm:left-6 flex items-center gap-2 text-slate-400 hover:text-slate-600 text-xs sm:text-sm">
           <i className="fas fa-chevron-left" /> Home
         </button>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-          <h3 className="font-display font-extrabold text-2xl text-navy mb-1">Welcome Back</h3>
-          <p className="text-slate-500 text-sm mb-6">Sign in to continue.</p>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm mt-8 sm:mt-0">
+          {/* Mobile-only Barangay Puerto Branding Header */}
+          <div className="lg:hidden flex items-center gap-3 mb-5 pb-3 border-b border-slate-100">
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 shadow-sm shrink-0">
+              <img src="/logo.png" alt="Barangay Puerto Seal" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <div className="font-display font-extrabold text-sm text-navy leading-tight">Barangay Puerto</div>
+              <div className="text-[11px] text-slate-400">Relief Management System</div>
+            </div>
+          </div>
+
+          <h3 className="font-display font-extrabold text-xl sm:text-2xl text-navy mb-1">Welcome Back</h3>
+          <p className="text-slate-500 text-xs sm:text-sm mb-5 sm:mb-6">Sign in to continue.</p>
 
           <div className="mb-5">
             <label className="form-label">Login as</label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
               {ROLES.map(r => (
                 <button key={r.key} type="button" onClick={() => setRole(r.key)}
-                  className={`p-3 rounded-xl border-2 text-center transition-all ${role === r.key ? 'shadow-md' : ''}`}
+                  className={`p-2 sm:p-3 rounded-xl border-2 text-center transition-all cursor-pointer ${role === r.key ? 'shadow-md' : ''}`}
                   style={{
                     borderColor: role === r.key ? r.color : '#e2e8f0',
                     background: role === r.key ? r.color + '10' : 'white',
                   }}>
-                  <i className={`fas ${r.icon} text-lg mb-1 block`}
+                  <i className={`fas ${r.icon} text-base sm:text-lg mb-0.5 sm:mb-1 block`}
                     style={{ color: role === r.key ? r.color : '#94a3b8' }} />
-                  <div className="text-xs font-bold font-display"
+                  <div className="text-[11px] sm:text-xs font-bold font-display truncate"
                     style={{ color: role === r.key ? r.color : '#94a3b8' }}>{r.label}</div>
                 </button>
               ))}

@@ -171,7 +171,9 @@ export default function BeneficiarySettings() {
                       <span className="badge badge-approved text-[10px]">Standard LGU</span>
                     </div>
                     <div className="form-group">
-                      <label className="form-label text-xs">Full Name / Display Name *</label>
+                      <label className="form-label text-xs">
+                        Full Name / Display Name <span className="text-red-500">*</span>
+                      </label>
                       <input
                         className="form-input text-xs py-2"
                         value={form.full_name}
@@ -228,7 +230,9 @@ export default function BeneficiarySettings() {
 
                   <div className="grid grid-cols-1 gap-3 sm:gap-4 max-w-xl">
                     <div className="form-group">
-                      <label className="form-label text-xs">Current Password *</label>
+                      <label className="form-label text-xs">
+                        Current Password <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <input
                           type={showPw.curr ? 'text' : 'password'}
@@ -247,7 +251,9 @@ export default function BeneficiarySettings() {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label text-xs">New Password *</label>
+                      <label className="form-label text-xs">
+                        New Password <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <input
                           type={showPw.new ? 'text' : 'password'}
@@ -267,7 +273,9 @@ export default function BeneficiarySettings() {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label text-xs">Confirm New Password *</label>
+                      <label className="form-label text-xs">
+                        Confirm New Password <span className="text-red-500">*</span>
+                      </label>
                       <div className="relative">
                         <input
                           type={showPw.conf ? 'text' : 'password'}
